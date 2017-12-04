@@ -21,7 +21,7 @@ The full documentation and reference can be found on the Wiki pate
 ## Examples
 #### HTTP Client
 Send a HTTP Request
-```
+```lua
 local multisocket = require("multisocket")
 
 
