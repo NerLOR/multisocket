@@ -21,7 +21,7 @@ The full documentation and reference can be found on the Wiki pate
 ## Examples
 #### HTTP Client
 Send a HTTP Request
-```lua
+```
 local multisocket = require("multisocket")
 
 
@@ -52,7 +52,7 @@ while true do
     elseif line == "" then
         break
     else
-        local field, value = line:match("^([^:]+): .+$")
+        local field, value = line:match("^([^:]+): (.+)$")
         fields[field] = value
     end
 end
