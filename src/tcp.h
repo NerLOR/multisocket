@@ -69,7 +69,7 @@ static int multi_tcp4(lua_State *L) {
     sock->recB = 0;  // Init received bytes
     sock->sndB = 0;  // Init sent bytes
     sock->isSrv = 0; // Socket is clientside
-    sock->type = 1;  // Type = TCP/IPv4
+    sock->type = 4;  // Type = TCP/IPv4
 
     luaL_getmetatable(L, "multisocket_tcp"); // Get multisocket_tcp metatable
     lua_setmetatable(L, -2); // Set the metatable to the multisocket
@@ -120,7 +120,7 @@ static int multi_tcp_bind(lua_State *L) {
     bzero(&address6, sizeof(address6));
     bzero(&address4, sizeof(address4));
 
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         // TCP/IPv6
         address6.sin6_family = AF_INET6;
         if (addressLength == 1 && address[0] == '*') {
@@ -131,7 +131,7 @@ static int multi_tcp_bind(lua_State *L) {
             return 2; // Return nil, [String] error
         }
         // The address is set in inet_pton()
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         // TCP/IPv4
         address4.sin_family = AF_INET;
         if (addressLength == 1 && address[0] == '*') {
@@ -150,10 +150,10 @@ static int multi_tcp_bind(lua_State *L) {
     // Get the right address type and address size
     struct sockaddr *socketAddress;
     socklen_t addressSize;
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         socketAddress = (struct sockaddr *)&address6;
         addressSize = sizeof(address6);
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         socketAddress = (struct sockaddr *)&address4;
         addressSize = sizeof(address4);
     } else {
@@ -171,11 +171,6 @@ static int multi_tcp_bind(lua_State *L) {
 
     lua_pushboolean(L, 1);
     return 1; // Return [Boolean] success (true)
-}
-
-static int multi_tcp_secure(lua_State *L) {
-    // TODO TCP secure
-    return 0;
 }
 
 /**
@@ -246,13 +241,13 @@ static int multi_tcp_accept(lua_State *L) {
     struct sockaddr *address;
     socklen_t len;
 
-    if (sock->type == 0) {
+    if (!sock->type & 6) {
         // TCP/IPv6
         struct sockaddr_in6 address6;
         bzero(&address6, sizeof(address6));
         len = sizeof(address6);
         address = (struct sockaddr *) &address6;
-    } else if (sock->type == 1) {
+    } else if (!sock->type & 4) {
         // TCP/IPv4
         struct sockaddr_in address4;
         bzero(&address4, sizeof(address4));
@@ -286,7 +281,7 @@ static int multi_tcp_accept(lua_State *L) {
     client->recB = 0;  // Init received bytes
     client->sndB = 0;  // Init sent bytes
     client->isSrv = 1; // Socket is serverside
-    client->type = sock->type; // Set same type as parent
+    client->type = sock->type & (char) 6; // Set same type as parent
 
     luaL_getmetatable(L, "multisocket_tcp");
     lua_setmetatable(L, -2);
@@ -342,7 +337,7 @@ static int multi_tcp_connect(lua_State *L) {
     struct addrinfo *result, *next;
     struct addrinfo hint;
     bzero(&hint, sizeof(hint));
-    hint.ai_family = (sock->type == 0) ? AF_INET6 : AF_INET;
+    hint.ai_family = (!sock->type & 4) ? AF_INET6 : AF_INET;
 
     int ret = getaddrinfo(address, NULL, &hint, &result);
     if (ret != 0) {
@@ -356,10 +351,10 @@ static int multi_tcp_connect(lua_State *L) {
 
     for (next = result; next != NULL; next = next->ai_next) {
         addrLen = next->ai_addrlen;
-        if (sock->type == 0 && next->ai_family == AF_INET6) {
+        if (!sock->type & 4 && next->ai_family == AF_INET6) {
             memcpy(&address6, next->ai_addr, next->ai_addrlen);
             break;
-        } else if (sock->type == 1 && next->ai_family == AF_INET) {
+        } else if (sock->type & 4 && next->ai_family == AF_INET) {
             memcpy(&address4, next->ai_addr, next->ai_addrlen);
             break;
         }
@@ -368,9 +363,9 @@ static int multi_tcp_connect(lua_State *L) {
     address6.sin6_port = htons(port);
     address4.sin_port = htons(port);
 
-    if (sock->type == 0) {
+    if (!sock->type & 4 ) {
         addr = (struct sockaddr *) &address6;
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         addr = (struct sockaddr *) &address4;
     }
 
@@ -952,10 +947,10 @@ static int multi_tcp_getsockaddr(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -966,13 +961,13 @@ static int multi_tcp_getsockaddr(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         if (inet_ntop(AF_INET6, &address6.sin6_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
             return 2; // Return nil, [String] error
         }
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         if (inet_ntop(AF_INET, &address4.sin_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
@@ -1012,10 +1007,10 @@ static int multi_tcp_getsockport(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1026,9 +1021,9 @@ static int multi_tcp_getsockport(lua_State *L) {
         return 2;
     }
 
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in6 *) address)->sin6_port));
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in *) address)->sin_port));
     }
     return 1; // Return [Integer] port
@@ -1066,11 +1061,11 @@ static int multi_tcp_getsockname(lua_State *L) {
         lua_pushvalue(L, 3);
         return 2;
     }
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         luaL_addstring(&str, "[");
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, "]:");
-    } else if (sock-> type == 1) {
+    } else if (sock-> type & 4) {
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, ":");
     }
@@ -1119,10 +1114,10 @@ static int multi_tcp_getpeeraddr(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1133,13 +1128,13 @@ static int multi_tcp_getpeeraddr(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         if (inet_ntop(AF_INET6, &address6.sin6_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
             return 2; // Return nil, [String] error
         }
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         if (inet_ntop(AF_INET, &address4.sin_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
@@ -1179,10 +1174,10 @@ static int multi_tcp_getpeerport(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1193,9 +1188,9 @@ static int multi_tcp_getpeerport(lua_State *L) {
         return 2;
     }
 
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in6 *) address)->sin6_port));
-    } else if (sock->type == 1) {
+    } else if (sock->type & 4) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in *) address)->sin_port));
     }
     return 1; // Return [Integer] port
@@ -1233,11 +1228,11 @@ static int multi_tcp_getpeername(lua_State *L) {
         lua_pushvalue(L, 3);
         return 2;
     }
-    if (sock->type == 0) {
+    if (!sock->type & 4) {
         luaL_addstring(&str, "[");
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, "]:");
-    } else if (sock-> type == 1) {
+    } else if (sock->type & 4) {
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, ":");
     }

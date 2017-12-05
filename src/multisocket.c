@@ -2,9 +2,9 @@
 
 
 // Import Lua Libraries
-#include "/usr/include/lua5.3/lua.h"
-#include "/usr/include/lua5.3/lualib.h"
-#include "/usr/include/lua5.3/lauxlib.h"
+#include <lua5.3/lua.h>
+#include <lua5.3/lualib.h>
+#include <lua5.3/lauxlib.h>
 
 // Import C Libraries
 #include <sys/socket.h>
@@ -59,9 +59,11 @@ typedef struct {
     unsigned char isSrv:1;
 
     /**
-     * Type: 0 = TCP6, 1 = TCP4, 2 = UDP6, 3 = UDP4
+     * Bit 2: 0 = IPv6, 1 = IPv4
+     * Bit 1: 0 = TCP, 1 = UDP
+     * Bit 0: 0 = not encrypted, 1 = encrypted
      */
-    unsigned char type:2;
+    unsigned char type:3;
 } multisocket;
 
 /**
@@ -79,7 +81,7 @@ static long getcurrenttime() {
 
 // Import Multisocket Libraries
 #include "tcp.h"
-#include "ssl.h"
+#include "encrypt.h"
 
 
 
@@ -134,7 +136,7 @@ static int multi_pointer(lua_State *L) {
 
     lua_pushlightuserdata(L, (void *) pointer); // WARNING: USING POINTER!
 
-    if (sock->type == 0 || sock->type == 1) {
+    if (!sock->type & 2) {
         luaL_getmetatable(L, "multisocket_tcp");
     } else {
         luaL_getmetatable(L, "multisocket_udp");
@@ -329,10 +331,10 @@ static int multi_open(lua_State *L) {
             return 2; // Return nil, [String] error
         }
 
-        if (sock->type == 0) {
+        if (!sock->type & 4) {
             addr = (struct sockaddr *) &address6;
             addrLen = addrLen6;
-        } else if (sock->type == 1) {
+        } else if (sock->type & 4) {
             addr = (struct sockaddr *) &address4;
             addrLen = addrLen4;
         }
@@ -349,7 +351,7 @@ static int multi_open(lua_State *L) {
         }
 
         if (connect(sock->socket, addr, addrLen) == -1) {
-            if (sock->type == 0 && addrLen4 != 0 && addrLen6 != 0) {
+            if (!sock->type & 4 && addrLen4 != 0 && addrLen6 != 0) {
                 addrLen6 = 0;
                 lua_pop(L,4);
                 continue;
@@ -395,12 +397,14 @@ static int multi_time(lua_State *L) {
  */
 int luaopen_multisocket(lua_State *L) {
 
+    multi_init_ssl();
+
     /**
      * The Metatable for TCP Sockets, IPv6 and IPv4
      */
     static const luaL_Reg mt_tcp[] = {
             {"bind",                multi_tcp_bind},
-            {"secure",              multi_tcp_secure},
+            {"encrypt",             multi_tcp_encrypt},
             {"listen",              multi_tcp_listen},
             {"accept",              multi_tcp_accept},
             {"connect",             multi_tcp_connect},
