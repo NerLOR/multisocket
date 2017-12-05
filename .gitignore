@@ -1,4 +1,5 @@
 /cmake-build-debug
+/cmake-bulid-debug/*
 /CMakeLists.txt
 /.idea
 /.idea/*
