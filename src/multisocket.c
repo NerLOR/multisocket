@@ -1,21 +1,13 @@
-
+/**
+ * Multisocket
+ * Lua Library
+ */
 
 
 // Import Lua Libraries
 #include <lua5.3/lua.h>
 #include <lua5.3/lualib.h>
 #include <lua5.3/lauxlib.h>
-
-// Import C Libraries
-#include <sys/socket.h>
-#include <memory.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <zconf.h>
-#include <time.h>
-#include <poll.h>
-#include <netdb.h>
 
 
 
@@ -32,6 +24,8 @@ typedef struct {
      * Filedescriptor of the socket
      */
     int socket;
+
+    SSL* ssl;
 
     /**
      * Creation-time of the socket in nanoseconds
@@ -81,7 +75,6 @@ static long getcurrenttime() {
 
 // Import Multisocket Libraries
 #include "tcp.h"
-#include "encrypt.h"
 
 
 

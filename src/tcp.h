@@ -1,4 +1,17 @@
 
+#include <sys/socket.h>
+#include <memory.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <zconf.h>
+#include <time.h>
+#include <poll.h>
+#include <netdb.h>
+
+
+#include "encrypt.h"
+
 
 
 /**
@@ -459,9 +472,17 @@ static int multi_tcp_receive(lua_State *L) {
     while (1) {
         if (mode == 0) {
 
-            long size = recv(sock->socket, buffer, sizeof(buffer), 0);
+            long size;
+            if (sock->type & 1) {
+                size = SSL_read(sock->ssl, buffer, sizeof(buffer));
+            } else {
+                size = recv(sock->socket, buffer, sizeof(buffer), 0);
+            }
             if (size < 0) {
                 lua_pushnil(L);
+                if (sock->type & 1) {
+                    errno = SSL_get_error(sock->ssl, size);
+                }
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     lua_pushstring(L, "timeout");
                 } else if (errno == ECONNRESET) {
@@ -484,10 +505,18 @@ static int multi_tcp_receive(lua_State *L) {
             if (len > wantedBytes-strLen) {
                 len = wantedBytes-strLen;
             }
-            long size = recv(sock->socket, buffer, len, 0);
+            long size;
+            if (sock->type & 1) {
+                size = SSL_read(sock->ssl, buffer, len);
+            } else {
+                size = recv(sock->socket, buffer, len, 0);
+            }
 
             if (size < 0) {
                 lua_pushnil(L);
+                if (sock->type & 1) {
+                    errno = SSL_get_error(sock->ssl, (int) size);
+                }
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     lua_pushstring(L, "timeout");
                 } else if (errno == ECONNRESET) {
@@ -514,9 +543,17 @@ static int multi_tcp_receive(lua_State *L) {
 
             memcpy(pre, buffer, sizeof(buffer)); // Copy buffer to pre
 
-            long size = recv(sock->socket, buffer, sizeof(buffer), MSG_PEEK);
+            long size;
+            if (sock->type & 1) {
+                size = SSL_peek(sock->ssl, buffer, sizeof(buffer));
+            } else {
+                size = recv(sock->socket, buffer, sizeof(buffer), MSG_PEEK);
+            }
             if (size < 0) {
                 lua_pushnil(L);
+                if (sock->type & 1) {
+                    errno = SSL_get_error(sock->ssl, (int) size);
+                }
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     lua_pushstring(L, "timeout");
                 } else if (errno == ECONNRESET) {
@@ -539,8 +576,17 @@ static int multi_tcp_receive(lua_State *L) {
             if (ptr != NULL) {
                 strLen += ptr - buffer + wantedStringLen;
                 luaL_addlstring(&str, buffer, ptr - buffer);
-                if (recv(sock->socket, buffer, ptr - buffer + wantedStringLen, 0) == -1) {
+                int ret;
+                if (sock->type & 1) {
+                    ret = SSL_read(sock->ssl, buffer, ptr - buffer + wantedStringLen);
+                } else {
+                    ret = recv(sock->socket, buffer, ptr - buffer + wantedStringLen, 0);
+                }
+                if (ret < 0) {
                     lua_pushnil(L);
+                    if (sock->type & 1) {
+                        errno = SSL_get_error(sock->ssl, (int) size);
+                    }
                     if (errno == EAGAIN || errno == EWOULDBLOCK) {
                         lua_pushstring(L, "timeout");
                     } else if (errno == ECONNRESET) {
@@ -560,8 +606,17 @@ static int multi_tcp_receive(lua_State *L) {
             } else {
                 strLen += size;
                 luaL_addlstring(&str, buffer, size);
-                if (recv(sock->socket, buffer, size, 0) == -1) {
+                int ret;
+                if (sock->type & 1) {
+                    ret = SSL_read(sock->ssl, buffer, size);
+                } else {
+                    ret = recv(sock->socket, buffer, size, 0);
+                }
+                if (ret < 0) {
                     lua_pushnil(L);
+                    if (sock->type & 1) {
+                        errno = SSL_get_error(sock->ssl, ret);
+                    }
                     if (errno == EAGAIN || errno == EWOULDBLOCK) {
                         lua_pushstring(L, "timeout");
                     } else if (errno == ECONNRESET) {
@@ -682,8 +737,13 @@ static int multi_tcp_send(lua_State *L) {
         if (s > dataSize - pos) {
             s = dataSize - pos;
         }
-        long trans = send(sock->socket, data+pos, s, 0);
-        if (trans == -1) {
+        long trans;
+        if ( sock->type & 1 ) {
+            trans = SSL_write(sock->ssl, data+pos, s);
+        } else {
+            trans = send(sock->socket, data+pos, s, 0);
+        }
+        if (trans < 0) {
             lua_pushnil(L);
             if (poll(ufds, 1, 0) == -1) {
                 lua_pushnil(L);
@@ -691,11 +751,14 @@ static int multi_tcp_send(lua_State *L) {
                 lua_pushinteger(L, pos);
                 return 3; // Return nil, [String] error, [Integer] partByteNum
             }
+            if (sock->type & 1) {
+                errno = SSL_get_error(sock->ssl, (int) trans);
+            }
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 lua_pushstring(L, "timeout");
             } else if (errno == ECONNRESET) {
                 lua_pushstring(L, "closed");
-            } else if (ufds[0].revents & POLLIN) {
+            } else if (!sock->type & 1 && ufds[0].revents & POLLIN || sock->type & 1 && SSL_want_read(sock->ssl)) {
                 lua_pushstring(L, "wantread");
             } else {
                 lua_pushstring(L, strerror(errno));
