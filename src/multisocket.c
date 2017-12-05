@@ -4,10 +4,24 @@
  */
 
 
-// Import Lua Libraries
+
+#include <sys/socket.h>
+#include <memory.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <zconf.h>
+#include <time.h>
+#include <poll.h>
+#include <netdb.h>
+
 #include <lua5.3/lua.h>
 #include <lua5.3/lualib.h>
 #include <lua5.3/lauxlib.h>
+
+#include <openssl/ssl.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
 
 
 
@@ -25,7 +39,7 @@ typedef struct {
      */
     int socket;
 
-    SSL* ssl;
+    SSL *ssl;
 
     /**
      * Creation-time of the socket in nanoseconds
@@ -73,8 +87,8 @@ static long getcurrenttime() {
 
 
 
-// Import Multisocket Libraries
 #include "tcp.h"
+#include "ssl.h"
 
 
 
@@ -226,12 +240,13 @@ static int multi_select(lua_State *L) {
  * Create a socket, bind it and connect it
  * @param1 [String] address (address or domain)
  * @param2  [Integer] port (0-65535)
+ * @param3 [Boolean] encrypt / nil
  * @return1 [Multisocket] client / nil
  * @return2 nil / [String] error
  */
 static int multi_open(lua_State *L) {
     // Check if there are three parameters and if they have valid values
-    if (lua_gettop(L) != 2) {
+    if (lua_gettop(L) != 2 && lua_gettop(L) != 3) {
         lua_pushnil(L);
         lua_pushstring(L, "Wrong number of arguments");
         return 2; // Return nil, [String] error
@@ -243,12 +258,20 @@ static int multi_open(lua_State *L) {
         lua_pushnil(L);
         lua_pushstring(L, "Argument #2 has to be [Integer] port (0-65535)");
         return 2; // Return nil, [String] error
+    } else if (lua_gettop(L) == 3 && !lua_isboolean(L, 3)) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #3 has to be [Boolean] encrypt");
+        return 2; // Return nil, [String] error
     }
 
     // Load parameters into variables
     size_t addressLength = 0;
     const char *address = lua_tolstring(L, 1, &addressLength);
     unsigned short port = (unsigned short) lua_tointeger(L, 2);
+    char encrypt = 0;
+    if (lua_gettop(L) == 3) {
+        encrypt = (char) lua_toboolean(L, 3);
+    }
 
     // Init address structs for IPv6 and IPv4
     struct sockaddr_in6 address6;
@@ -271,7 +294,6 @@ static int multi_open(lua_State *L) {
 
     while (1) {
         int ret = getaddrinfo(address, NULL, &hint, &result);
-        printf("asfd\n");
         if (ret != 0 && ret != -2) {
             lua_pushnil(L);
             lua_pushstring(L, gai_strerror(ret));
@@ -359,6 +381,10 @@ static int multi_open(lua_State *L) {
         } else {
             break;
         }
+    }
+
+    if (encrypt) {
+
     }
 
     lua_pushvalue(L, 3);
