@@ -19,4 +19,4 @@ but it could also work with older and newer versions.
 The full documentation and reference can be found on the [Wiki page](wiki).
 
 ## Examples
-Some Examples can be found [here](//github.com/multisocket/wiki/Examples).
+Some Examples can be found [here](//github.com/NerLOR/multisocket/wiki/Examples).
