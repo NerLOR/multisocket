@@ -4,3 +4,5 @@
 /.idea/*
 *.so
 *.dll
+/wiki
+/wiki/*
