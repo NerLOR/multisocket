@@ -16,7 +16,7 @@ but it could also work with older and newer versions.
 * IPv4/IPv6 UDP support
 
 ## Documentation
-The full documentation and reference can be found on the [Wiki page](multisocket/wiki).
+The full documentation and reference can be found on the [Wiki page](wiki).
 
 ## Examples
-Some Examples can be found [here](multisocket/wiki/Examples).
+Some Examples can be found [here](wiki/Examples).
