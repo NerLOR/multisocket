@@ -11,8 +11,10 @@ but it could also work with older and newer versions.
 * IPv4 TCP
 * IPv6 TCP
 
-#### Planned:
+#### Work in progress:
 * SSL/TLS Encryption on TCP connections
+
+#### Planned:
 * IPv4/IPv6 UDP support
 
 ## Documentation
