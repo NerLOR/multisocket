@@ -17,7 +17,14 @@ static void multi_destroy_ssl() {
     SSL_free(ssl);
 }*/
 
-
+/**
+ * Lua Method
+ * Encrypt the TPC connection with SSL/TLS
+ * @param0 [Multisocket] sock (TCP)
+ * @param1 [Table] sslParams
+ * @return1 [Boolean] success / nil
+ * @return2 nil / [String] error
+ */
 static int multi_tcp_encrypt(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
@@ -30,11 +37,21 @@ static int multi_tcp_encrypt(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    // Cast userdata to multisocket
-    multisocket *sock = (multisocket *) lua_touserdata(L, 1);
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
 
+    if (sock->enc) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Socket is already encrypted");
+        return 2; // Return nil, [String] error
+    }
 
-    const SSL_METHOD *method = TLSv1_2_client_method();
+    const SSL_METHOD *method;
+    if (sock->srv) {
+        method = TLSv1_2_server_method();
+    } else {
+        method = TLSv1_2_client_method();
+    }
 
     SSL_CTX *sslctx = SSL_CTX_new(method);
     SSL_CTX_set_options(sslctx, SSL_OP_SINGLE_DH_USE);
@@ -44,10 +61,11 @@ static int multi_tcp_encrypt(lua_State *L) {
 
     sock->ssl = SSL_new(sslctx);
     SSL_set_fd(sock->ssl, sock->socket);
-    sock->type |= 1;
+    sock->enc = 1;
 
     SSL_connect(sock->ssl);
 
-    return 0;
+    lua_pushboolean(L, 1);
+    return 1; // Return [Boolean] success (true)
 }
 

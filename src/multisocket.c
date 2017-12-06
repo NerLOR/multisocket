@@ -39,6 +39,9 @@ typedef struct {
      */
     int socket;
 
+    /**
+     * If the connection is encrypted, use the ssl descriptor
+     */
     SSL *ssl;
 
     /**
@@ -64,15 +67,24 @@ typedef struct {
     /**
      * Is this socket on serverside?
      */
-    unsigned char isSrv:1;
+    char srv:1; // Only one bit = boolean
 
     /**
-     * Bit 2: 0 = IPv6, 1 = IPv4
-     * Bit 1: 0 = TCP, 1 = UDP
-     * Bit 0: 0 = not encrypted, 1 = encrypted
+     * Is the connection SSL/TLS encrypted?
      */
-    unsigned char type:3;
-} multisocket;
+    char enc:1; // Only one bit = boolean
+
+    /**
+     * Is the socket a TCP socket?
+     */
+    char tcp:1; // Only one bit = boolean
+
+    /**
+     * Is the socket a IPv6 socket?
+     */
+    char ip6:1; // Only one bit = boolean
+
+} Multisocket;
 
 /**
  * Returns the current UNIX-time in nanoseconds.
@@ -112,8 +124,8 @@ static int multi_getpointer(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    // Cast userdata to multisocket
-    multisocket *sock = (multisocket *) lua_touserdata(L, 1);
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
 
     lua_pushinteger(L, (long) sock); // WARNING: USING POINTER!
     return 1;
@@ -139,11 +151,11 @@ static int multi_pointer(lua_State *L) {
     }
 
     long pointer = (long) lua_tointeger(L, 1);
-    multisocket *sock = (multisocket *) pointer;
+    Multisocket *sock = (Multisocket *) pointer;
 
     lua_pushlightuserdata(L, (void *) pointer); // WARNING: USING POINTER!
 
-    if (!sock->type & 2) {
+    if (sock->tcp) {
         luaL_getmetatable(L, "multisocket_tcp");
     } else {
         luaL_getmetatable(L, "multisocket_udp");
@@ -192,7 +204,7 @@ static int multi_select(lua_State *L) {
     while (lua_next(L, -2)) {
         lua_pushvalue(L, -2);
         //const char *key = lua_tostring(L, -1);
-        multisocket *sock = (multisocket *) lua_touserdata(L, -2);
+        Multisocket *sock = (Multisocket *) lua_touserdata(L, -2);
         if ( sock->socket > maxfd ) {
             maxfd = sock->socket;
         }
@@ -206,7 +218,7 @@ static int multi_select(lua_State *L) {
     while (lua_next(L, -2)) {
         lua_pushvalue(L, -2);
         //const char *key = lua_tostring(L, -1);
-        multisocket *sock = (multisocket *) lua_touserdata(L, -2);
+        Multisocket *sock = (Multisocket *) lua_touserdata(L, -2);
         if ( sock->socket > maxfd ) {
             maxfd = sock->socket;
         }
@@ -319,7 +331,7 @@ static int multi_open(lua_State *L) {
     address6.sin6_port = htons(port);
     address4.sin_port = htons(port);
 
-    multisocket *sock;
+    Multisocket *sock;
 
     while (1) {
         if (addrLen6 != 0) {
@@ -330,7 +342,7 @@ static int multi_open(lua_State *L) {
                 lua_pushvalue(L, 2);
                 return 2; // Return nil, [String] error
             }
-            sock = (multisocket *) lua_touserdata(L, 3);
+            sock = (Multisocket *) lua_touserdata(L, 3);
         } else if (addrLen4 != 0) {
             lua_pushcfunction(L, multi_tcp4);
             lua_call(L, 0, 2);
@@ -339,17 +351,17 @@ static int multi_open(lua_State *L) {
                 lua_pushvalue(L, 2);
                 return 2; // Return nil, [String] error
             }
-            sock = (multisocket *) lua_touserdata(L, 3);
+            sock = (Multisocket *) lua_touserdata(L, 3);
         } else {
             lua_pushnil(L);
             lua_pushstring(L, "Unable to resolve address");
             return 2; // Return nil, [String] error
         }
 
-        if (!sock->type & 4) {
+        if (sock->ip6) {
             addr = (struct sockaddr *) &address6;
             addrLen = addrLen6;
-        } else if (sock->type & 4) {
+        } else {
             addr = (struct sockaddr *) &address4;
             addrLen = addrLen4;
         }
@@ -366,7 +378,7 @@ static int multi_open(lua_State *L) {
         }
 
         if (connect(sock->socket, addr, addrLen) == -1) {
-            if (!sock->type & 4 && addrLen4 != 0 && addrLen6 != 0) {
+            if (sock->ip6 && addrLen4 != 0 && addrLen6 != 0) {
                 addrLen6 = 0;
                 lua_pop(L,4);
                 continue;
