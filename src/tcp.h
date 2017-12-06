@@ -30,10 +30,16 @@ static int multi_tcp6(lua_State *L) {
     sock->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     sock->recB = 0;  // Init received bytes
     sock->sndB = 0;  // Init sent bytes
-    sock->srv = 0;
+
+    sock->listen = 0;
+    sock->conn = 0;
+    sock->servers = 0;
+    sock->clients = 0;
     sock->tcp = 1;
+    sock->udp = 0;
     sock->enc = 0;
-    sock->ip6 = 1;
+    sock->ipv6 = 1;
+    sock->ipv4 = 0;
 
     luaL_getmetatable(L, "multisocket_tcp"); // Get multisocket_tcp metatable
     lua_setmetatable(L, -2); // Set the metatable to the Multisocket
@@ -70,10 +76,16 @@ static int multi_tcp4(lua_State *L) {
     sock->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     sock->recB = 0;  // Init received bytes
     sock->sndB = 0;  // Init sent bytes
-    sock->srv = 0;
+
+    sock->listen = 0;
+    sock->conn = 0;
+    sock->servers = 0;
+    sock->clients = 0;
     sock->tcp = 1;
+    sock->udp = 0;
     sock->enc = 0;
-    sock->ip6 = 0;
+    sock->ipv6 = 0;
+    sock->ipv4 = 1;
 
     luaL_getmetatable(L, "multisocket_tcp"); // Get multisocket_tcp metatable
     lua_setmetatable(L, -2); // Set the metatable to the Multisocket
@@ -124,7 +136,7 @@ static int multi_tcp_bind(lua_State *L) {
     bzero(&address6, sizeof(address6));
     bzero(&address4, sizeof(address4));
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         // TCP/IPv6
         address6.sin6_family = AF_INET6;
         if (addressLength == 1 && address[0] == '*') {
@@ -135,7 +147,7 @@ static int multi_tcp_bind(lua_State *L) {
             return 2; // Return nil, [String] error
         }
         // The address is set in inet_pton()
-    } else {
+    } else if (sock->ipv4) {
         // TCP/IPv4
         address4.sin_family = AF_INET;
         if (addressLength == 1 && address[0] == '*') {
@@ -154,10 +166,10 @@ static int multi_tcp_bind(lua_State *L) {
     // Get the right address type and address size
     struct sockaddr *socketAddress;
     socklen_t addressSize;
-    if (sock->ip6) {
+    if (sock->ipv6) {
         socketAddress = (struct sockaddr *)&address6;
         addressSize = sizeof(address6);
-    } else {
+    } else if (sock->ipv4) {
         socketAddress = (struct sockaddr *)&address4;
         addressSize = sizeof(address4);
     }
@@ -211,6 +223,9 @@ static int multi_tcp_listen(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
+    sock->listen = 1;
+    sock->servers = 1;
+
     lua_pushboolean(L, 1);
     return 1; // Return [Boolean] success (true)
 }
@@ -241,13 +256,13 @@ static int multi_tcp_accept(lua_State *L) {
     struct sockaddr *address;
     socklen_t len;
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         // TCP/IPv6
         struct sockaddr_in6 address6;
         bzero(&address6, sizeof(address6));
         len = sizeof(address6);
         address = (struct sockaddr *) &address6;
-    } else {
+    } else if (sock->ipv4) {
         // TCP/IPv4
         struct sockaddr_in address4;
         bzero(&address4, sizeof(address4));
@@ -276,10 +291,16 @@ static int multi_tcp_accept(lua_State *L) {
     client->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     client->recB = 0;  // Init received bytes
     client->sndB = 0;  // Init sent bytes
-    client->srv = 1;
-    client->ip6 = sock->ip6;
-    client->enc = 0;
+
+    client->listen = 0;
+    client->conn = 1;
+    client->servers = 1;
+    client->clients = 0;
     client->tcp = 1;
+    client->udp = 0;
+    client->enc = sock->enc;
+    client->ipv6 = sock->ipv6;
+    client->ipv4 = sock->ipv4;
 
     luaL_getmetatable(L, "multisocket_tcp");
     lua_setmetatable(L, -2);
@@ -335,7 +356,7 @@ static int multi_tcp_connect(lua_State *L) {
     struct addrinfo *result, *next;
     struct addrinfo hint;
     bzero(&hint, sizeof(hint));
-    hint.ai_family = (sock->ip6) ? AF_INET6 : AF_INET;
+    hint.ai_family = (sock->ipv6) ? AF_INET6 : AF_INET;
 
     int ret = getaddrinfo(address, NULL, &hint, &result);
     if (ret != 0) {
@@ -349,10 +370,10 @@ static int multi_tcp_connect(lua_State *L) {
 
     for (next = result; next != NULL; next = next->ai_next) {
         addrLen = next->ai_addrlen;
-        if (sock->ip6 && next->ai_family == AF_INET6) {
+        if (sock->ipv6 && next->ai_family == AF_INET6) {
             memcpy(&address6, next->ai_addr, next->ai_addrlen);
             break;
-        } else if (!sock->ip6 && next->ai_family == AF_INET) {
+        } else if (sock->ipv4 && next->ai_family == AF_INET) {
             memcpy(&address4, next->ai_addr, next->ai_addrlen);
             break;
         }
@@ -361,9 +382,9 @@ static int multi_tcp_connect(lua_State *L) {
     address6.sin6_port = htons(port);
     address4.sin_port = htons(port);
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         addr = (struct sockaddr *) &address6;
-    } else {
+    } else if (sock->ipv4) {
         addr = (struct sockaddr *) &address4;
     }
 
@@ -376,6 +397,9 @@ static int multi_tcp_connect(lua_State *L) {
         }
         return 2; // Return nil, [String] error
     }
+
+    sock->conn = 1;
+    sock->clients = 1;
 
     lua_pushboolean(L, 1);
     return 1; // Return [Boolean] success (true)
@@ -571,7 +595,7 @@ static int multi_tcp_receive(lua_State *L) {
             if (ptr != NULL) {
                 strLen += ptr - buffer + wantedStringLen;
                 luaL_addlstring(&str, buffer, ptr - buffer);
-                int ret;
+                long ret;
                 if (sock->enc) {
                     ret = SSL_read(sock->ssl, buffer, ptr - buffer + wantedStringLen);
                 } else {
@@ -602,7 +626,7 @@ static int multi_tcp_receive(lua_State *L) {
             } else {
                 strLen += size;
                 luaL_addlstring(&str, buffer, size);
-                int ret;
+                long ret;
                 if (sock->enc) {
                     ret = SSL_read(sock->ssl, buffer, size);
                 } else {
@@ -1012,10 +1036,10 @@ static int multi_tcp_getsockaddr(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->ip6) {
+    if (sock->ipv6) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else {
+    } else if (sock->ipv4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1026,13 +1050,13 @@ static int multi_tcp_getsockaddr(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         if (inet_ntop(AF_INET6, &address6.sin6_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
             return 2; // Return nil, [String] error
         }
-    } else {
+    } else if (sock->ipv4) {
         if (inet_ntop(AF_INET, &address4.sin_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
@@ -1072,10 +1096,10 @@ static int multi_tcp_getsockport(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->ip6) {
+    if (sock->ipv6) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else {
+    } else if (sock->ipv4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1086,9 +1110,9 @@ static int multi_tcp_getsockport(lua_State *L) {
         return 2;
     }
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in6 *) address)->sin6_port));
-    } else {
+    } else if (sock->ipv4) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in *) address)->sin_port));
     }
     return 1; // Return [Integer] port
@@ -1126,11 +1150,11 @@ static int multi_tcp_getsockname(lua_State *L) {
         lua_pushvalue(L, 3);
         return 2;
     }
-    if (sock->ip6) {
+    if (sock->ipv6) {
         luaL_addstring(&str, "[");
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, "]:");
-    } else {
+    } else if (sock->ipv4) {
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, ":");
     }
@@ -1179,10 +1203,10 @@ static int multi_tcp_getpeeraddr(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->ip6) {
+    if (sock->ipv6) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else {
+    } else if (sock->ipv4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1193,13 +1217,13 @@ static int multi_tcp_getpeeraddr(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         if (inet_ntop(AF_INET6, &address6.sin6_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
             return 2; // Return nil, [String] error
         }
-    } else {
+    } else if (sock->ipv4) {
         if (inet_ntop(AF_INET, &address4.sin_addr, string, sizeof(string)) == 0) {
             lua_pushnil(L);
             lua_pushstring(L, strerror(errno));
@@ -1239,10 +1263,10 @@ static int multi_tcp_getpeerport(lua_State *L) {
     socklen_t addrLen;
 
     struct sockaddr *address;
-    if (sock->ip6) {
+    if (sock->ipv6) {
         address = (struct sockaddr *) &address6;
         addrLen = sizeof(address6);
-    } else {
+    } else if (sock->ipv4) {
         address = (struct sockaddr *) &address4;
         addrLen = sizeof(address4);
     }
@@ -1253,9 +1277,9 @@ static int multi_tcp_getpeerport(lua_State *L) {
         return 2;
     }
 
-    if (sock->ip6) {
+    if (sock->ipv6) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in6 *) address)->sin6_port));
-    } else {
+    } else if (sock->ipv4) {
         lua_pushinteger(L, ntohs(((struct sockaddr_in *) address)->sin_port));
     }
     return 1; // Return [Integer] port
@@ -1293,11 +1317,11 @@ static int multi_tcp_getpeername(lua_State *L) {
         lua_pushvalue(L, 3);
         return 2;
     }
-    if (sock->ip6) {
+    if (sock->ipv6) {
         luaL_addstring(&str, "[");
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, "]:");
-    } else {
+    } else if (sock->ipv4) {
         luaL_addstring(&str, lua_tostring(L, 2));
         luaL_addstring(&str, ":");
     }

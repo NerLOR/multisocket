@@ -65,24 +65,49 @@ typedef struct {
     long sndB;
 
     /**
-     * Is this socket on serverside?
+     * Is the socket a listener?
      */
-    char srv:1; // Only one bit = boolean
+    unsigned char listen:1;
+
+    /**
+     * Is the socket already connected?
+     */
+    unsigned char conn:1;
+
+    /**
+     * Is the socket on serverside?
+     */
+    unsigned char servers:1;
+
+    /**
+     * Is the socket on clientside?
+     */
+    unsigned char clients:1;
 
     /**
      * Is the connection SSL/TLS encrypted?
      */
-    char enc:1; // Only one bit = boolean
+    unsigned char enc:1;
 
     /**
      * Is the socket a TCP socket?
      */
-    char tcp:1; // Only one bit = boolean
+    unsigned char tcp:1;
+
+    /**
+     * Is the socket a UDP socket?
+     */
+    unsigned char udp:1;
 
     /**
      * Is the socket a IPv6 socket?
      */
-    char ip6:1; // Only one bit = boolean
+    unsigned char ipv6:1;
+
+    /**
+     * Is the socket a IPv4 socket?
+     */
+    unsigned char ipv4:1;
 
 } Multisocket;
 
@@ -337,31 +362,31 @@ static int multi_open(lua_State *L) {
         if (addrLen6 != 0) {
             lua_pushcfunction(L, multi_tcp6);
             lua_call(L, 0, 2);
-            if (lua_isnil(L, 3)) {
+            if (lua_isnil(L, 4)) {
                 lua_pushnil(L);
-                lua_pushvalue(L, 2);
+                lua_pushvalue(L, 3);
                 return 2; // Return nil, [String] error
             }
-            sock = (Multisocket *) lua_touserdata(L, 3);
+            sock = (Multisocket *) lua_touserdata(L, 4);
         } else if (addrLen4 != 0) {
             lua_pushcfunction(L, multi_tcp4);
             lua_call(L, 0, 2);
-            if (lua_isnil(L, 3)) {
+            if (lua_isnil(L, 4)) {
                 lua_pushnil(L);
-                lua_pushvalue(L, 2);
+                lua_pushvalue(L, 3);
                 return 2; // Return nil, [String] error
             }
-            sock = (Multisocket *) lua_touserdata(L, 3);
+            sock = (Multisocket *) lua_touserdata(L, 4);
         } else {
             lua_pushnil(L);
             lua_pushstring(L, "Unable to resolve address");
             return 2; // Return nil, [String] error
         }
 
-        if (sock->ip6) {
+        if (sock->ipv6) {
             addr = (struct sockaddr *) &address6;
             addrLen = addrLen6;
-        } else {
+        } else if (sock->ipv4) {
             addr = (struct sockaddr *) &address4;
             addrLen = addrLen4;
         }
@@ -378,7 +403,7 @@ static int multi_open(lua_State *L) {
         }
 
         if (connect(sock->socket, addr, addrLen) == -1) {
-            if (sock->ip6 && addrLen4 != 0 && addrLen6 != 0) {
+            if (sock->ipv6 && addrLen4 != 0 && addrLen6 != 0) {
                 addrLen6 = 0;
                 lua_pop(L,4);
                 continue;
@@ -399,7 +424,7 @@ static int multi_open(lua_State *L) {
 
     }
 
-    lua_pushvalue(L, 3);
+    lua_pushvalue(L, 4);
     return 1; // Return [Multisocket] client
 
 }
