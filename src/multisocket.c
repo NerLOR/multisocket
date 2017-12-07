@@ -123,9 +123,8 @@ static long getcurrenttime() {
 }
 
 
-
-#include "tcp.h"
 #include "ssl.h"
+#include "tcp.h"
 
 
 
@@ -453,7 +452,7 @@ static int multi_time(lua_State *L) {
  */
 int luaopen_multisocket(lua_State *L) {
 
-    multi_init_ssl();
+    multi_ssl_init();
 
     /**
      * The Metatable for TCP Sockets, IPv6 and IPv4

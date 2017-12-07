@@ -495,7 +495,7 @@ static int multi_tcp_receive(lua_State *L) {
                     lua_pushstring(L, "closed");
                 } else {
                     if (sock->enc) {
-                        lua_pushstring(L, strerror(SSL_get_error(sock->ssl, (int) size)));
+                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
                     } else {
                         lua_pushstring(L, strerror(errno));
                     }
@@ -537,7 +537,7 @@ static int multi_tcp_receive(lua_State *L) {
                     lua_pushstring(L, "closed");
                 } else {
                     if (sock->enc) {
-                        lua_pushstring(L, strerror(SSL_get_error(sock->ssl, (int) size)));
+                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
                     } else {
                         lua_pushstring(L, strerror(errno));
                     }
@@ -567,7 +567,7 @@ static int multi_tcp_receive(lua_State *L) {
             } else {
                 size = recv(sock->socket, buffer, sizeof(buffer), MSG_PEEK);
             }
-            if (size < 0) {
+            if (size < 0 || sock->enc && size == 0) {
                 lua_pushnil(L);
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     lua_pushstring(L, "timeout");
@@ -575,7 +575,7 @@ static int multi_tcp_receive(lua_State *L) {
                     lua_pushstring(L, "closed");
                 } else {
                     if (sock->enc) {
-                        lua_pushstring(L, strerror(SSL_get_error(sock->ssl, (int) size)));
+                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, (int) size));
                     } else {
                         lua_pushstring(L, strerror(errno));
                     }
@@ -609,7 +609,7 @@ static int multi_tcp_receive(lua_State *L) {
                         lua_pushstring(L, "closed");
                     } else {
                         if (sock->enc) {
-                            lua_pushstring(L, strerror(SSL_get_error(sock->ssl, (int) size)));
+                            lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
                         } else {
                             lua_pushstring(L, strerror(errno));
                         }
@@ -640,7 +640,7 @@ static int multi_tcp_receive(lua_State *L) {
                         lua_pushstring(L, "closed");
                     } else {
                         if (sock->enc) {
-                            lua_pushstring(L, strerror(SSL_get_error(sock->ssl, (int) ret)));
+                            lua_pushstring(L, multi_ssl_get_error(sock->ssl, ret));
                         } else {
                             lua_pushstring(L, strerror(errno));
                         }
@@ -780,7 +780,7 @@ static int multi_tcp_send(lua_State *L) {
                 lua_pushstring(L, "wantread");
             } else {
                 if (sock->enc) {
-                    lua_pushstring(L, strerror(SSL_get_error(sock->ssl, (int) trans)));
+                    lua_pushstring(L, multi_ssl_get_error(sock->ssl, trans));
                 } else {
                     lua_pushstring(L, strerror(errno));
                 }
@@ -822,7 +822,7 @@ static int multi_tcp_close(lua_State *L) {
     Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
 
     if (sock->enc) {
-        SSL_shutdown(sock->ssl);
+        multi_ssl_close(sock->ssl);
     }
 
     // Close the socket connection
