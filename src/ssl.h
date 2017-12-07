@@ -29,7 +29,7 @@ static const char* multi_ssl_get_error(SSL* ssl, int ret) {
         case SSL_ERROR_WANT_WRITE: return "want_write";
         case SSL_ERROR_WANT_CONNECT: return "want_connect";
         case SSL_ERROR_WANT_ACCEPT: return "want_accept";
-        case SSL_ERROR_WANT_X509_LOOKUP: return "want_cert_lookup";
+        case SSL_ERROR_WANT_X509_LOOKUP: return "want_x509_lookup";
         case SSL_ERROR_SYSCALL: return (ret2 == 0)? (ret == 0)? "protocol violation" : err2 : err1;
         case SSL_ERROR_SSL: return err1;
         default: return "unknown error";
@@ -38,7 +38,7 @@ static const char* multi_ssl_get_error(SSL* ssl, int ret) {
 
 static int multi_ssl_close(SSL* ssl) {
     SSL_shutdown(ssl);
-    //SSL_free(ssl);
+    SSL_free(ssl);
     return 0;
 }
 
@@ -92,11 +92,12 @@ static int multi_tcp_encrypt(lua_State *L) {
 
     SSL_CTX *ctx = SSL_CTX_new(method);
     SSL_CTX_set_options(ctx, SSL_OP_SINGLE_DH_USE | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
     SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
-    const char* certfile = NULL; // "/home/lorenz/Documents/Projects/lua/multisocket/rsa/localhost_cert.pem";
-    const char* keyfile = NULL; // "/home/lorenz/Documents/Projects/lua/multisocket/rsa/localhost_privkey.pem";
+    const char* certfile = NULL;
+    const char* keyfile = NULL;
 
     if (lua_gettop(L) == 2) {
         lua_pushvalue(L, 2);

@@ -28,7 +28,7 @@
 /**
  * Number of bytes used to create a buffer in receive or send functions
  */
-#define MULTISOCKET_BUFFER_SIZE 4500 // Ethernetframe size = 1500
+#define MULTISOCKET_BUFFER_SIZE 8192 // Ethernetframe size = 1500, TLS/SSL size = 16384
 
 /**
  * Primary socket identifier: multisocket
@@ -181,7 +181,7 @@ static int multi_pointer(lua_State *L) {
 
     if (sock->tcp) {
         luaL_getmetatable(L, "multisocket_tcp");
-    } else {
+    } else if (sock->udp) {
         luaL_getmetatable(L, "multisocket_udp");
     }
 

@@ -10,9 +10,11 @@ but it could also work with older and newer versions.
 #### Features:
 * IPv4 TCP
 * IPv6 TCP
+* SSL/TLS Encryption on TCP connections
 
 #### Work in progress:
-* SSL/TLS Encryption on TCP connections
+* Bugfixes
+* Performance improvement
 
 #### Planned:
 * IPv4/IPv6 UDP support

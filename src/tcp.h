@@ -26,6 +26,7 @@ static int multi_tcp6(lua_State *L) {
     // Allocate memory for Multisocket
     Multisocket *sock = (Multisocket *) lua_newuserdata(L, sizeof(Multisocket));
     sock->socket = desc; // Set the socket filedescriptor
+    sock->ssl = NULL;
     sock->startT = getcurrenttime(); // Set connection start time in nanoseconds
     sock->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     sock->recB = 0;  // Init received bytes
@@ -72,6 +73,7 @@ static int multi_tcp4(lua_State *L) {
     // Allocate memory for Multisocket
     Multisocket *sock = (Multisocket *) lua_newuserdata(L, sizeof(Multisocket));
     sock->socket = desc; // Set the socket filedescriptor
+    sock->ssl = NULL;
     sock->startT = getcurrenttime(); // Set connection start time in nanoseconds
     sock->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     sock->recB = 0;  // Init received bytes
@@ -287,6 +289,7 @@ static int multi_tcp_accept(lua_State *L) {
     // Allocate memory for Multisocket
     Multisocket *client = (Multisocket *) lua_newuserdata(L, sizeof(Multisocket));
     client->socket = desc; // Set the socket filedescriptor
+    client->ssl = NULL;
     client->startT = getcurrenttime(); // Set connection start time in nanoseconds
     client->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     client->recB = 0;  // Init received bytes
@@ -489,13 +492,13 @@ static int multi_tcp_receive(lua_State *L) {
             }
             if (size < 0) {
                 lua_pushnil(L);
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    lua_pushstring(L, "timeout");
-                } else if (errno == ECONNRESET) {
-                    lua_pushstring(L, "closed");
+                if (sock->enc) {
+                    lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
                 } else {
-                    if (sock->enc) {
-                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        lua_pushstring(L, "timeout");
+                    } else if (errno == ECONNRESET) {
+                        lua_pushstring(L, "closed");
                     } else {
                         lua_pushstring(L, strerror(errno));
                     }
@@ -531,13 +534,13 @@ static int multi_tcp_receive(lua_State *L) {
 
             if (size < 0) {
                 lua_pushnil(L);
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    lua_pushstring(L, "timeout");
-                } else if (errno == ECONNRESET) {
-                    lua_pushstring(L, "closed");
+                if (sock->enc) {
+                    lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
                 } else {
-                    if (sock->enc) {
-                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        lua_pushstring(L, "timeout");
+                    } else if (errno == ECONNRESET) {
+                        lua_pushstring(L, "closed");
                     } else {
                         lua_pushstring(L, strerror(errno));
                     }
@@ -569,13 +572,13 @@ static int multi_tcp_receive(lua_State *L) {
             }
             if (size < 0 || sock->enc && size == 0) {
                 lua_pushnil(L);
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    lua_pushstring(L, "timeout");
-                } else if (errno == ECONNRESET) {
-                    lua_pushstring(L, "closed");
+                if (sock->enc) {
+                    lua_pushstring(L, multi_ssl_get_error(sock->ssl, (int) size));
                 } else {
-                    if (sock->enc) {
-                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, (int) size));
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        lua_pushstring(L, "timeout");
+                    } else if (errno == ECONNRESET) {
+                        lua_pushstring(L, "closed");
                     } else {
                         lua_pushstring(L, strerror(errno));
                     }
@@ -603,13 +606,13 @@ static int multi_tcp_receive(lua_State *L) {
                 }
                 if (ret < 0) {
                     lua_pushnil(L);
-                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                        lua_pushstring(L, "timeout");
-                    } else if (errno == ECONNRESET) {
-                        lua_pushstring(L, "closed");
+                    if (sock->enc) {
+                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
                     } else {
-                        if (sock->enc) {
-                            lua_pushstring(L, multi_ssl_get_error(sock->ssl, size));
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            lua_pushstring(L, "timeout");
+                        } else if (errno == ECONNRESET) {
+                            lua_pushstring(L, "closed");
                         } else {
                             lua_pushstring(L, strerror(errno));
                         }
@@ -634,13 +637,13 @@ static int multi_tcp_receive(lua_State *L) {
                 }
                 if (ret < 0) {
                     lua_pushnil(L);
-                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                        lua_pushstring(L, "timeout");
-                    } else if (errno == ECONNRESET) {
-                        lua_pushstring(L, "closed");
+                    if (sock->enc) {
+                        lua_pushstring(L, multi_ssl_get_error(sock->ssl, ret));
                     } else {
-                        if (sock->enc) {
-                            lua_pushstring(L, multi_ssl_get_error(sock->ssl, ret));
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            lua_pushstring(L, "timeout");
+                        } else if (errno == ECONNRESET) {
+                            lua_pushstring(L, "closed");
                         } else {
                             lua_pushstring(L, strerror(errno));
                         }
@@ -675,7 +678,7 @@ static int multi_tcp_receive(lua_State *L) {
                 if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR)) {
                     lua_pushstring(L, "closed");
                 } else if (ufds[0].revents & POLLOUT) {
-                    lua_pushstring(L, "wantwrite");
+                    lua_pushstring(L, "want_write");
                 } else {
                     lua_pushstring(L, "error");
                 }
@@ -684,33 +687,6 @@ static int multi_tcp_receive(lua_State *L) {
             }
         }*/
     }
-}
-
-/**
- * Lua Method
- * Receive until CRLF and return the line without CRLF
- * @param0 [Multisocket] socket (TCP)
- * @return1 [String] data / nil
- * @return2 nil / [String] error
- * @return3 nil / [String] partData
- */
-static int multi_tcp_receive_line(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
-        return 2; // Return nil, [String] error
-    }
-
-    lua_pushcfunction(L, multi_tcp_receive);
-    lua_pushvalue(L, 1);
-    lua_pushstring(L, "\r\n");
-    lua_call(L, 2, 3);
-    return 3;
 }
 
 /**
@@ -752,35 +728,32 @@ static int multi_tcp_send(lua_State *L) {
     ufds[0].fd = sock->socket;
     ufds[0].events = POLLIN | POLLOUT | POLLERR | POLLHUP;
 
+    int s = MULTISOCKET_BUFFER_SIZE;
     while (pos < dataSize) {
-
-        long s = MULTISOCKET_BUFFER_SIZE;
         if (s > dataSize - pos) {
-            s = dataSize - pos;
+            s = (int) (dataSize - pos);
         }
+
         long trans;
         if (sock->enc) {
             trans = SSL_write(sock->ssl, data+pos, s);
         } else {
             trans = send(sock->socket, data+pos, s, 0);
         }
-        if (trans < 0) {
+
+        if (trans < 0 || sock->enc && trans == 0) {
             lua_pushnil(L);
-            if (poll(ufds, 1, 0) == -1) {
-                lua_pushnil(L);
-                lua_pushstring(L, strerror(errno));
-                lua_pushinteger(L, pos);
-                return 3; // Return nil, [String] error, [Integer] partByteNum
-            }
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                lua_pushstring(L, "timeout");
-            } else if (errno == ECONNRESET) {
-                lua_pushstring(L, "closed");
-            } else if (!sock->enc && ufds[0].revents & POLLIN) {
-                lua_pushstring(L, "wantread");
+            if (sock->enc) {
+                lua_pushstring(L, multi_ssl_get_error(sock->ssl, (int) trans));
             } else {
-                if (sock->enc) {
-                    lua_pushstring(L, multi_ssl_get_error(sock->ssl, trans));
+                if (poll(ufds, 1, 0) == -1) {
+                    lua_pushstring(L, strerror(errno));
+                } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    lua_pushstring(L, "timeout");
+                } else if (errno == ECONNRESET) {
+                    lua_pushstring(L, "closed");
+                } else if (!sock->enc && ufds[0].revents & POLLIN) {
+                    lua_pushstring(L, "want_read");
                 } else {
                     lua_pushstring(L, strerror(errno));
                 }
@@ -837,507 +810,7 @@ static int multi_tcp_close(lua_State *L) {
 }
 
 
-/**
- * Lua Method
- * @param0 [Multisocket] socket (TCP)
- * @param1 nil / [Number] timeout (seconds)
- * @return1 [Boolean] success / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_settimeout(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 2 && lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
-        return 2; // Return nil, [String] error
-    } else if (lua_gettop(L) == 2 && (!lua_isnumber(L, 2) ||  lua_tonumber(L, 2) < 0)) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #1 has to be [Number] timeout");
-        return 2; // Return nil, [String] error
-    }
 
-    // Cast userdata to Multisocket
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    // Load parameters into variables
-    // If timeval time is 0 then the timeout is unlimited
-    // Therefore 1 will be added to tv_usec
-    struct timeval time;
-    bzero(&time, sizeof(time));
-    if (lua_gettop(L) == 2) {
-        double sec = lua_tonumber(L, 2);
-        time.tv_sec = (long) sec;
-        time.tv_usec = (long) ((sec - time.tv_sec) * 1000000) + 1;
-    }
-
-    if (setsockopt(sock->socket, SOL_SOCKET, SO_RCVTIMEO, &time, sizeof(time)) < 0 ||
-        setsockopt(sock->socket, SOL_SOCKET, SO_SNDTIMEO, &time, sizeof(time)) < 0) {
-        lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
-        return 2; // Return nil, [String] error
-    }
-
-    lua_pushboolean(L, 1);
-    return 1; // Return [Boolean] success (true)
-}
-
-/**
- * Lua Method
- * Get the duration the socket is created
- * @param0 [Multisocket] socket
- * @return1 [Number] duration
- */
-static int multi_getduration(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    lua_pushnumber(L, ((double) getcurrenttime() - sock->startT) / 1000000000);
-    return 1; // Return [Number] duration
-}
-
-/**
- * Lua Method
- * Get the time the socket was created
- * @param0 [Multisocket] socket
- * @return1 [Number] startTime (UNIX)
- */
-static int multi_getstarttime(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    lua_pushnumber(L, ((double) sock->startT) / 1000000000);
-    return 1; // Return [Number] startTime (UNIX)
-}
-
-/**
- * Lua Method
- * Get the time the socket got the last signal from the peer
- * @param0 [Multisocket] socket
- * @return1 [Number] lastTime (UNIX)
- */
-static int multi_getlasttime(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    lua_pushnumber(L, ((double) sock->lastT) / 1000000000);
-    return 1; // Return [Number] lastSignal (UNIX)
-}
-
-/**
- * Lua Method
- * Get the number of bytes sent by the socket
- * @param0 [Multisocket] socket
- * @return1 [Integer] numBytesSent
- */
-static int multi_getsnd(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    lua_pushinteger(L, sock->sndB);
-    return 1; // Return [Integer] numBytesSent
-}
-
-/**
- * Lua Method
- * Get the number of bytes received by the socket
- * @param0 [Multisocket] socket
- * @return1 [Integer] numBytesReceived
- */
-static int multi_getrec(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    lua_pushinteger(L, sock->recB);
-    return 1; // Return [Integer] numBytesReceived
-}
-
-
-/**
- * Lua Method
- * Get the address of the socket
- * @param0 [Multisocket] socket
- * @return1 [String] address / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_getsockaddr(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    struct sockaddr_in6 address6;
-    struct sockaddr_in address4;
-    char string[INET6_ADDRSTRLEN+INET_ADDRSTRLEN];
-    bzero(&address6, sizeof(address6));
-    bzero(&address4, sizeof(address4));
-    bzero(string, sizeof(string));
-    socklen_t addrLen;
-
-    struct sockaddr *address;
-    if (sock->ipv6) {
-        address = (struct sockaddr *) &address6;
-        addrLen = sizeof(address6);
-    } else if (sock->ipv4) {
-        address = (struct sockaddr *) &address4;
-        addrLen = sizeof(address4);
-    }
-
-    if (getsockname(sock->socket, address, &addrLen) < 0) {
-        lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
-        return 2; // Return nil, [String] error
-    }
-
-    if (sock->ipv6) {
-        if (inet_ntop(AF_INET6, &address6.sin6_addr, string, sizeof(string)) == 0) {
-            lua_pushnil(L);
-            lua_pushstring(L, strerror(errno));
-            return 2; // Return nil, [String] error
-        }
-    } else if (sock->ipv4) {
-        if (inet_ntop(AF_INET, &address4.sin_addr, string, sizeof(string)) == 0) {
-            lua_pushnil(L);
-            lua_pushstring(L, strerror(errno));
-            return 2; // Return nil, [String] error
-        }
-    }
-
-    lua_pushstring(L, string);
-    return 1; // Return [String] address
-}
-
-/**
- * Lua Method
- * Get the port of the socket
- * @param0 [Multisocket] socket
- * @return1 [Integer] port / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_getsockport(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    struct sockaddr_in6 address6;
-    struct sockaddr_in address4;
-    bzero(&address6, sizeof(address6));
-    bzero(&address4, sizeof(address4));
-    socklen_t addrLen;
-
-    struct sockaddr *address;
-    if (sock->ipv6) {
-        address = (struct sockaddr *) &address6;
-        addrLen = sizeof(address6);
-    } else if (sock->ipv4) {
-        address = (struct sockaddr *) &address4;
-        addrLen = sizeof(address4);
-    }
-
-    if (getsockname(sock->socket, address, &addrLen) < 0) {
-        lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
-        return 2;
-    }
-
-    if (sock->ipv6) {
-        lua_pushinteger(L, ntohs(((struct sockaddr_in6 *) address)->sin6_port));
-    } else if (sock->ipv4) {
-        lua_pushinteger(L, ntohs(((struct sockaddr_in *) address)->sin_port));
-    }
-    return 1; // Return [Integer] port
-}
-
-/**
- * Lua Method
- * Get the address and port of the socket
- * @param0 [Multisocket] socket (TCP)
- * @return1 [String] name / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_getsockname(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    luaL_Buffer str;
-    luaL_buffinit(L, &str);
-
-    lua_pushcfunction(L, multi_tcp_getsockaddr);
-    lua_pushvalue(L, 1);
-    lua_call(L, 1, 2);
-    if (lua_isnil(L, 2)) {
-        lua_pushnil(L);
-        lua_pushvalue(L, 3);
-        return 2;
-    }
-    if (sock->ipv6) {
-        luaL_addstring(&str, "[");
-        luaL_addstring(&str, lua_tostring(L, 2));
-        luaL_addstring(&str, "]:");
-    } else if (sock->ipv4) {
-        luaL_addstring(&str, lua_tostring(L, 2));
-        luaL_addstring(&str, ":");
-    }
-
-    lua_pushcfunction(L, multi_tcp_getsockport);
-    lua_pushvalue(L, 1);
-    lua_call(L, 1, 2);
-    if (lua_isnil(L, 2)) {
-        lua_pushnil(L);
-        lua_pushvalue(L, 3);
-        return 2;
-    }
-    luaL_addstring(&str, lua_tostring(L, 0));
-
-    luaL_pushresult(&str);
-    return 1; // Return [String] name
-}
-
-/**
- * Lua Method
- * Get the address of the peer
- * @param0 [Multisocket] socket
- * @return1 [String] address / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_getpeeraddr(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    struct sockaddr_in6 address6;
-    struct sockaddr_in address4;
-    char string[INET6_ADDRSTRLEN+INET_ADDRSTRLEN];
-    bzero(&address6, sizeof(address6));
-    bzero(&address4, sizeof(address4));
-    bzero(string, sizeof(string));
-    socklen_t addrLen;
-
-    struct sockaddr *address;
-    if (sock->ipv6) {
-        address = (struct sockaddr *) &address6;
-        addrLen = sizeof(address6);
-    } else if (sock->ipv4) {
-        address = (struct sockaddr *) &address4;
-        addrLen = sizeof(address4);
-    }
-
-    if (getpeername(sock->socket, address, &addrLen) < 0) {
-        lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
-        return 2; // Return nil, [String] error
-    }
-
-    if (sock->ipv6) {
-        if (inet_ntop(AF_INET6, &address6.sin6_addr, string, sizeof(string)) == 0) {
-            lua_pushnil(L);
-            lua_pushstring(L, strerror(errno));
-            return 2; // Return nil, [String] error
-        }
-    } else if (sock->ipv4) {
-        if (inet_ntop(AF_INET, &address4.sin_addr, string, sizeof(string)) == 0) {
-            lua_pushnil(L);
-            lua_pushstring(L, strerror(errno));
-            return 2; // Return nil, [String] error
-        }
-    }
-
-    lua_pushstring(L, string);
-    return 1; // Return [String] address
-}
-
-/**
- * Lua Method
- * Get the port of the peer
- * @param0 [Multisocket] socket
- * @return1 [Integer] port / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_getpeerport(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    struct sockaddr_in6 address6;
-    struct sockaddr_in address4;
-    bzero(&address6, sizeof(address6));
-    bzero(&address4, sizeof(address4));
-    socklen_t addrLen;
-
-    struct sockaddr *address;
-    if (sock->ipv6) {
-        address = (struct sockaddr *) &address6;
-        addrLen = sizeof(address6);
-    } else if (sock->ipv4) {
-        address = (struct sockaddr *) &address4;
-        addrLen = sizeof(address4);
-    }
-
-    if (getpeername(sock->socket, address, &addrLen) < 0) {
-        lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
-        return 2;
-    }
-
-    if (sock->ipv6) {
-        lua_pushinteger(L, ntohs(((struct sockaddr_in6 *) address)->sin6_port));
-    } else if (sock->ipv4) {
-        lua_pushinteger(L, ntohs(((struct sockaddr_in *) address)->sin_port));
-    }
-    return 1; // Return [Integer] port
-}
-
-/**
- * Lua Method
- * Get the address and port of the peer
- * @param0 [Multisocket] socket (TCP)
- * @return1 [String] name / nil
- * @return2 nil / [String] error
- */
-static int multi_tcp_getpeername(lua_State *L) {
-    // Check if there are two parameters and if they have valid values
-    if (lua_gettop(L) != 1) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Wrong number of arguments");
-        return 2; // Return nil, [String] error
-    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
-        lua_pushnil(L);
-        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket");
-        return 2; // Return nil, [String] error
-    }
-
-    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
-
-    luaL_Buffer str;
-    luaL_buffinit(L, &str);
-
-    lua_pushcfunction(L, multi_tcp_getpeeraddr);
-    lua_pushvalue(L, 1);
-    lua_call(L, 1, 2);
-    if (lua_isnil(L, 2)) {
-        lua_pushnil(L);
-        lua_pushvalue(L, 3);
-        return 2;
-    }
-    if (sock->ipv6) {
-        luaL_addstring(&str, "[");
-        luaL_addstring(&str, lua_tostring(L, 2));
-        luaL_addstring(&str, "]:");
-    } else if (sock->ipv4) {
-        luaL_addstring(&str, lua_tostring(L, 2));
-        luaL_addstring(&str, ":");
-    }
-
-    lua_pushcfunction(L, multi_tcp_getpeerport);
-    lua_pushvalue(L, 1);
-    lua_call(L, 1, 2);
-    if (lua_isnil(L, 2)) {
-        lua_pushnil(L);
-        lua_pushvalue(L, 3);
-        return 2;
-    }
-    luaL_addstring(&str, lua_tostring(L, 0));
-
-    luaL_pushresult(&str);
-    return 1; // Return [String] name
-}
+#include "tcp_support.h"
 
 
