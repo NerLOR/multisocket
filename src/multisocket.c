@@ -10,6 +10,7 @@
 #include <time.h>
 #include <poll.h>
 #include <netdb.h>
+#include <signal.h>
 
 #include <lua5.3/lua.h>
 #include <lua5.3/lualib.h>
@@ -18,7 +19,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
-#include <signal.h>
+#include <openssl/x509.h>
 
 
 
@@ -107,6 +108,10 @@ typedef struct {
     unsigned char ipv4:1;
 
 } Multisocket;
+
+typedef struct {
+    X509* cert;
+} Certificate;
 
 /**
  * Returns the current UNIX-time in nanoseconds.

@@ -183,3 +183,67 @@ static int multi_tcp_encrypt(lua_State *L) {
     return 1; // Return [Boolean] success (true)
 }
 
+
+/**
+ * Lua Method
+ * Get the own certificate
+ * @param0 [Multisocket] socket (SSL)
+ * @return1 [Certificate] cert
+ */
+static int multi_ssl_get_certificate(lua_State *L) {
+// Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (SSL)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    if (!sock->enc) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (SSL)");
+        return 2; // Return nil, [String] error
+    }
+
+    X509 *cert = SSL_get_certificate(sock->ssl);
+
+    return 0;
+}
+
+/**
+ * Lua Method
+ * Get the peer certificate
+ * @param0 [Multisocket] socket (SSL)
+ * @return1 [Certificate] cert
+ */
+static int multi_ssl_get_peer_certificate(lua_State *L) {
+// Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (SSL)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    if (!sock->enc) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (SSL)");
+        return 2; // Return nil, [String] error
+    }
+
+    X509 *cert = SSL_get_peer_certificate(sock->ssl);
+
+    return 0;
+}

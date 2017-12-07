@@ -14,8 +14,7 @@ but it may also work with older and newer versions.
 * SSL/TLS Encryption on TCP connections
 
 #### Work in progress:
-* Bugfixes
-* Performance improvements
+* Get information from X509 Certificates
 
 #### Planned:
 * IPv4/IPv6 UDP support
