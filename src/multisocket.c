@@ -22,13 +22,14 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include <signal.h>
 
 
 
 /**
  * Number of bytes used to create a buffer in receive or send functions
  */
-#define MULTISOCKET_BUFFER_SIZE 8192 // Ethernetframe size = 1500, TLS/SSL size = 16384
+#define MULTISOCKET_BUFFER_SIZE 6000 // Ethernetframe size = 1500, TLS/SSL size = 16384
 
 /**
  * Primary socket identifier: multisocket
@@ -453,6 +454,7 @@ static int multi_time(lua_State *L) {
 int luaopen_multisocket(lua_State *L) {
 
     multi_ssl_init();
+    signal(SIGPIPE, SIG_IGN);
 
     /**
      * The Metatable for TCP Sockets, IPv6 and IPv4

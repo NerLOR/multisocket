@@ -8,8 +8,8 @@ The library is designed to be used with **Lua 5.3**,
 but it could also work with older and newer versions.
 
 #### Features:
-* IPv4 TCP
-* IPv6 TCP
+* IPv4 TCP connections
+* IPv6 TCP connections
 * SSL/TLS Encryption on TCP connections
 
 #### Work in progress:
