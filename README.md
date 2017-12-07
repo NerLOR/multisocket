@@ -34,3 +34,5 @@ To use all these multithreading modules, you have to work with [pointers](https:
 **POINTERS ARE DANGEROUS** in a high-level languages like Lua.
 **USE THEM ONLY IF YOU KNOW WHAT YOU ARE DOING!** If you are not careful enough,
 you could create some serious security weak spots.
+
+And don't forget: ***POINTERS ARE EVIL!***
