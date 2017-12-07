@@ -1,10 +1,11 @@
 
 # Lua Multisocket
-A library written in C to provide simple IPv4/TCP and IPv6/TCP sockets in Lua.
+A library written in C to provide simple IPv4/TCP and IPv6/TCP sockets in Lua. 
+The library uses [OpenSSL](https://www.openssl.org/) to encrypt connections.
 UDP is currently not supported.
 
 ## Compatibility
-The library is designed to be used with **Lua 5.3**, 
+The library is designed to be used in **Lua 5.3**, 
 but it could also work with older and newer versions.
 
 #### Features:
@@ -14,7 +15,7 @@ but it could also work with older and newer versions.
 
 #### Work in progress:
 * Bugfixes
-* Performance improvement
+* Performance improvements
 
 #### Planned:
 * IPv4/IPv6 UDP support
