@@ -36,7 +36,7 @@ static int multi_tcp_receive_line(lua_State *L) {
  * @return1 [Boolean] success / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_settimeout(lua_State *L) {
+static int multi_tcp_set_timeout(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 2 && lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -83,7 +83,7 @@ static int multi_tcp_settimeout(lua_State *L) {
  * @param0 [Multisocket] socket
  * @return1 [Number] duration
  */
-static int multi_getduration(lua_State *L) {
+static int multi_get_duration(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -107,7 +107,7 @@ static int multi_getduration(lua_State *L) {
  * @param0 [Multisocket] socket
  * @return1 [Number] startTime (UNIX)
  */
-static int multi_getstarttime(lua_State *L) {
+static int multi_get_starttime(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -131,7 +131,7 @@ static int multi_getstarttime(lua_State *L) {
  * @param0 [Multisocket] socket
  * @return1 [Number] lastTime (UNIX)
  */
-static int multi_getlasttime(lua_State *L) {
+static int multi_get_lasttime(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -155,7 +155,7 @@ static int multi_getlasttime(lua_State *L) {
  * @param0 [Multisocket] socket
  * @return1 [Integer] numBytesSent
  */
-static int multi_getsnd(lua_State *L) {
+static int multi_get_sent(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -179,7 +179,7 @@ static int multi_getsnd(lua_State *L) {
  * @param0 [Multisocket] socket
  * @return1 [Integer] numBytesReceived
  */
-static int multi_getrec(lua_State *L) {
+static int multi_get_received(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -205,7 +205,7 @@ static int multi_getrec(lua_State *L) {
  * @return1 [String] address / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_getsockaddr(lua_State *L) {
+static int multi_tcp_get_sockaddr(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -267,7 +267,7 @@ static int multi_tcp_getsockaddr(lua_State *L) {
  * @return1 [Integer] port / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_getsockport(lua_State *L) {
+static int multi_tcp_get_sockport(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -317,7 +317,7 @@ static int multi_tcp_getsockport(lua_State *L) {
  * @return1 [String] name / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_getsockname(lua_State *L) {
+static int multi_tcp_get_sockname(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -334,7 +334,7 @@ static int multi_tcp_getsockname(lua_State *L) {
     luaL_Buffer str;
     luaL_buffinit(L, &str);
 
-    lua_pushcfunction(L, multi_tcp_getsockaddr);
+    lua_pushcfunction(L, multi_tcp_get_sockaddr);
     lua_pushvalue(L, 1);
     lua_call(L, 1, 2);
     if (lua_isnil(L, 2)) {
@@ -351,7 +351,7 @@ static int multi_tcp_getsockname(lua_State *L) {
         luaL_addstring(&str, ":");
     }
 
-    lua_pushcfunction(L, multi_tcp_getsockport);
+    lua_pushcfunction(L, multi_tcp_get_sockport);
     lua_pushvalue(L, 1);
     lua_call(L, 1, 2);
     if (lua_isnil(L, 2)) {
@@ -372,7 +372,7 @@ static int multi_tcp_getsockname(lua_State *L) {
  * @return1 [String] address / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_getpeeraddr(lua_State *L) {
+static int multi_tcp_get_peeraddr(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -434,7 +434,7 @@ static int multi_tcp_getpeeraddr(lua_State *L) {
  * @return1 [Integer] port / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_getpeerport(lua_State *L) {
+static int multi_tcp_get_peerport(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -484,7 +484,7 @@ static int multi_tcp_getpeerport(lua_State *L) {
  * @return1 [String] name / nil
  * @return2 nil / [String] error
  */
-static int multi_tcp_getpeername(lua_State *L) {
+static int multi_tcp_get_peername(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
@@ -501,7 +501,7 @@ static int multi_tcp_getpeername(lua_State *L) {
     luaL_Buffer str;
     luaL_buffinit(L, &str);
 
-    lua_pushcfunction(L, multi_tcp_getpeeraddr);
+    lua_pushcfunction(L, multi_tcp_get_peeraddr);
     lua_pushvalue(L, 1);
     lua_call(L, 1, 2);
     if (lua_isnil(L, 2)) {
@@ -518,7 +518,7 @@ static int multi_tcp_getpeername(lua_State *L) {
         luaL_addstring(&str, ":");
     }
 
-    lua_pushcfunction(L, multi_tcp_getpeerport);
+    lua_pushcfunction(L, multi_tcp_get_peerport);
     lua_pushvalue(L, 1);
     lua_call(L, 1, 2);
     if (lua_isnil(L, 2)) {
@@ -530,6 +530,130 @@ static int multi_tcp_getpeername(lua_State *L) {
 
     luaL_pushresult(&str);
     return 1; // Return [String] name
+}
+
+
+/**
+ * Is the socket a IPv6 socket?
+ * @param0 [Multisocket] socket
+ * @return1 [Boolean] ipv6
+ */
+static int multi_is_ipv6(lua_State *L) {
+    // Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    lua_pushboolean(L, sock->ipv6);
+    return 1;
+}
+
+/**
+ * Is the socket a IPv4 socket?
+ * @param0 [Multisocket] socket
+ * @return1 [Boolean] ipv4
+ */
+static int multi_is_ipv4(lua_State *L) {
+    // Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    lua_pushboolean(L, sock->ipv4);
+    return 1;
+}
+
+/**
+ * Lua Method
+ * Is the socket on the server side?
+ * @param0 [Multisocket] socket (TCP)
+ * @return1 [Boolean] serverside
+ */
+static int multi_tcp_is_server_side(lua_State *L) {
+    // Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    lua_pushboolean(L, sock->servers);
+    return 1;
+}
+
+/**
+ * Lua Method
+ * Is the socket on the client side?
+ * @param0 [Multisocket] socket (TCP)
+ * @return1 [Boolean] clientside
+ */
+static int multi_tcp_is_client_side(lua_State *L) {
+    // Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    lua_pushboolean(L, sock->clients);
+    return 1;
+}
+
+/**
+ * Lua Method
+ * Is the socket encrypted?
+ * @param0 [Multisocket] socket (TCP)
+ * @return1 [Boolean] encrypted
+ */
+static int multi_tcp_is_encrypted(lua_State *L) {
+    // Check if there are two parameters and if they have valid values
+    if (lua_gettop(L) != 1) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Wrong number of arguments");
+        return 2; // Return nil, [String] error
+    } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
+        lua_pushnil(L);
+        lua_pushstring(L, "Argument #0 has to be [Multisocket] socket (TCP)");
+        return 2; // Return nil, [String] error
+    }
+
+    // Cast userdata to Multisocket
+    Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
+
+    lua_pushboolean(L, sock->enc);
+    return 1;
 }
 
 

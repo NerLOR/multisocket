@@ -1,6 +1,9 @@
 
 
 
+/**
+ * Init OpenSSL
+ */
 static void multi_ssl_init() {
     SSL_load_error_strings();
     SSL_library_init();
@@ -8,11 +11,20 @@ static void multi_ssl_init() {
     OpenSSL_add_all_algorithms();
 }
 
+/**
+ * Unload OpenSSL
+ */
 static void multi_ssl_destroy() {
     ERR_free_strings();
     EVP_cleanup();
 }
 
+/**
+ * Return a error string from a SSL object
+ * @param ssl the ssl object
+ * @param ret the return value of the function
+ * @return error string or NULL
+ */
 static const char* multi_ssl_get_error(SSL* ssl, int ret) {
     if (ret > 0) {
         return NULL;
@@ -36,6 +48,11 @@ static const char* multi_ssl_get_error(SSL* ssl, int ret) {
     }
 }
 
+/**
+ * Close and shutdown the ssl connection
+ * @param ssl the ssl connection to be shutdown
+ * @return success, 0 = success
+ */
 static int multi_ssl_close(SSL* ssl) {
     SSL_shutdown(ssl);
     SSL_free(ssl);
