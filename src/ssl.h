@@ -166,17 +166,21 @@ static int multi_tcp_encrypt(lua_State *L) {
     SSL_set_fd(sock->ssl, sock->socket);
     sock->enc = 1;
 
-    int ret = 0;
-    if (sock->servers) {
-        ret = SSL_accept(sock->ssl);
-    } else if (sock->clients) {
-        ret = SSL_connect(sock->ssl);
-    }
+    while (1) {
+        int ret = 0;
+        if (sock->servers) {
+            ret = SSL_accept(sock->ssl);
+        } else if (sock->clients) {
+            ret = SSL_connect(sock->ssl);
+        }
 
-    if (ret <= 0) {
-        lua_pushnil(L);
-        lua_pushstring(L, multi_ssl_get_error(sock->ssl, ret));
-        return 2; // Return nil, [String] error
+        if (ret <= 0 && ((sock->servers && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_READ) || (sock->clients && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_WRITE))) {
+            lua_pushnil(L);
+            lua_pushstring(L, multi_ssl_get_error(sock->ssl, ret));
+            return 2; // Return nil, [String] error
+        } else if (ret == 1) {
+            break;
+        }
     }
 
     lua_pushboolean(L, 1);
@@ -191,7 +195,7 @@ static int multi_tcp_encrypt(lua_State *L) {
  * @return1 [Certificate] cert
  */
 static int multi_ssl_get_certificate(lua_State *L) {
-// Check if there are two parameters and if they have valid values
+    // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
         lua_pushstring(L, "Wrong number of arguments");
@@ -211,9 +215,10 @@ static int multi_ssl_get_certificate(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    X509 *cert = SSL_get_certificate(sock->ssl);
+    Certificate *cert = (Certificate *) lua_newuserdata(L, sizeof(Certificate));
+    cert->cert = SSL_get_certificate(sock->ssl);
 
-    return 0;
+    return 1; // Return [Certificate] cert
 }
 
 /**
@@ -223,7 +228,7 @@ static int multi_ssl_get_certificate(lua_State *L) {
  * @return1 [Certificate] cert
  */
 static int multi_ssl_get_peer_certificate(lua_State *L) {
-// Check if there are two parameters and if they have valid values
+    // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1) {
         lua_pushnil(L);
         lua_pushstring(L, "Wrong number of arguments");
@@ -243,7 +248,8 @@ static int multi_ssl_get_peer_certificate(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
-    X509 *cert = SSL_get_peer_certificate(sock->ssl);
+    Certificate *cert = (Certificate *) lua_newuserdata(L, sizeof(Certificate));
+    cert->cert = SSL_get_peer_certificate(sock->ssl);
 
-    return 0;
+    return 1; // Return [Certificate] cert
 }
