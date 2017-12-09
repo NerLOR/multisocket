@@ -3,6 +3,7 @@
 A library written in C to provide simple IPv4/TCP and IPv6/TCP sockets in Lua. 
 The library uses the [OpenSSL](https://www.openssl.org/) library to encrypt connections.
 UDP is currently not supported.
+With the HTTP module, it is possible to wrap a TCP/SSL connection to create a HTTP object.
 
 ## Compatibility
 The library is designed to be used in **Lua 5.3**, 
@@ -12,6 +13,7 @@ but it may also work with older and newer versions.
 * IPv4 TCP connections
 * IPv6 TCP connections
 * SSL/TLS Encryption on TCP connections
+* HTTP wrapper for TCP connections
 
 #### Work in progress:
 * Get information from X509 Certificates
