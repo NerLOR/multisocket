@@ -325,7 +325,7 @@ function res:respond( statuscode, body, statustext, length )
         len = 0
     end
 
-    len = length or len
+    len = length and type(length) == "number" and length or length and nil or len
 
     self.res.statuscode = statuscode == 200 and isPart and 206 or statuscode
     self.res.statustext = statustext or codes[statuscode].name
