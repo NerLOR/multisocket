@@ -293,7 +293,7 @@ function res:accept()
     return self
 end
 
-function res:respond( statuscode, body, statustext )
+function res:respond( statuscode, body, statustext, length )
     local len
     local isFile = false
     local sent = 0
@@ -317,9 +317,6 @@ function res:respond( statuscode, body, statustext )
         self.res.fields["Content-Range"] = "bytes "..( startb or 0 ).."-"..( endb or len - 1 ).."/"..len
         body:seek("set",startb or 0)
         len = endb and ( endb - startb + 1 ) or len
-    elseif type(body) == "number" then
-        len = body
-        body = ""
     elseif body then
         body = tostring(body)
         len = #body
@@ -327,6 +324,8 @@ function res:respond( statuscode, body, statustext )
         body = ""
         len = 0
     end
+
+    len = length or len
 
     self.res.statuscode = statuscode == 200 and isPart and 206 or statuscode
     self.res.statustext = statustext or codes[statuscode].name
