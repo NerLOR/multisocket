@@ -317,6 +317,9 @@ function res:respond( statuscode, body, statustext )
         self.res.fields["Content-Range"] = "bytes "..( startb or 0 ).."-"..( endb or len - 1 ).."/"..len
         body:seek("set",startb or 0)
         len = endb and ( endb - startb + 1 ) or len
+    elseif type(body) == "number" then
+        len = body
+        body = ""
     elseif body then
         body = tostring(body)
         len = #body
@@ -367,7 +370,7 @@ function res:error( statuscode, message, statustext, comment, emoji )
     local code = codes[statuscode]
     local title = statustext or statuscode.." "..code.name
     local emoji = emoji or code.emoji and code.emoji[ math.random( 1, #code.emoji ) ]
-    local desc = "HTTP/1.1 "..code.type.." "..statuscode..": "..code.name.."<br>"..code.desc..( message and "<br>"..message or "" )
+    local desc = "HTTP/1.1 "..code.type.." "..statuscode..": "..code.name.."<br>"..code.desc..( message and "<br><br>"..message or "" )
     local comment = comment or code.comment
     local content = ""
     content = content..'<!DOCTYPE html><html>'
