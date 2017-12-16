@@ -327,7 +327,7 @@ function res:respond( statuscode, body, statustext, length )
 
     if type(length) == "number" then
         len = length
-    elseif length then
+    elseif length ~= nil then
         len = nil
     end
 
