@@ -350,11 +350,11 @@ function res:respond( statuscode, body, statustext, length )
         end
         sent = #body
     else
-        self.socket:setTimeout(0)
+        --self.socket:setTimeout(0)
         while true do
             local buffer = body:read(BUFFER_SIZE) -- body:read(sent+BUFFER_SIZE < len and BUFFER_SIZE or len-sent)
             if not buffer or #buffer == 0 then
-                self:send("0"..CRLF..CRLF)
+                self:send("0\r\n\r\n")
                 break
             end
             sent = sent + #buffer
