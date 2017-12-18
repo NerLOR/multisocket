@@ -352,14 +352,14 @@ function res:respond( statuscode, body, statustext, length )
     else
         self.socket:setTimeout(0)
         while true do
-            local buffer = body:read(sent+BUFFER_SIZE < len and BUFFER_SIZE or len-sent)
+            local buffer = body:read(BUFFER_SIZE) -- body:read(sent+BUFFER_SIZE < len and BUFFER_SIZE or len-sent)
             if not buffer or #buffer == 0 then
                 self:send("0"..CRLF..CRLF)
                 break
             end
             sent = sent + #buffer
-            local success, err = self:send(string.format("%X",#buffer)..CRLF..buffer..CRLF)
-            if not success and ( self.coroutine and err ~= "timeout" ) then
+            local success, err = self:send(string.format("%X\r\n%s\r\n", #buffer, buffer))
+            if not success then
                 return nil, err
             end
         end
