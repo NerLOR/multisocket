@@ -297,7 +297,7 @@ static int multi_open(lua_State *L) {
     if (encrypt) {
         lua_pushcfunction(L, multi_tcp_encrypt);
         //lua_pushlightuserdata(L, sock);
-        lua_pushvalue(L, 4);
+        lua_pushvalue(L, 5);
         lua_pushnil(L);
         lua_call(L, 2, 2);
         if (lua_isnil(L, 2)) {
