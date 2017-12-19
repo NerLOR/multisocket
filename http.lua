@@ -505,7 +505,7 @@ function http.request( method, url, fields, body )
         return nil, "scheme not supported"
     end
 
-    local sock, err = multisocket.open(url, (scheme == "https" and 443 or 80), (scheme == "https"))
+    local sock, err = multisocket.open(host, (scheme == "https" and 443 or 80), (scheme == "https"))
     if not sock then
         return nil, err
     end
