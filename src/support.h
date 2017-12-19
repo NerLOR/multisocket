@@ -194,7 +194,7 @@ static int multi_open(lua_State *L) {
     struct addrinfo *result, *next;
     struct addrinfo hint;
     bzero(&hint, sizeof(hint));
-    hint.ai_family = AF_UNSPEC;
+    hint.ai_family = AF_INET6;
 
     struct sockaddr *addr;
     socklen_t addrLen6 = 0;
@@ -204,6 +204,7 @@ static int multi_open(lua_State *L) {
     while (1) {
         int ret = getaddrinfo(address, NULL, &hint, &result);
         if (ret != 0 && ret != -2) {
+            printf("ERROR: %i",ret);
             lua_pushnil(L);
             lua_pushstring(L, gai_strerror(ret));
             return 3; // Return nil, [String] error
