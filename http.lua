@@ -467,6 +467,7 @@ function http.wrap( conn, params )
         },
         socket = conn,
     }
+    params = params or {}
 
     if conn:isServerSide() then
         sock = setmetatable( sock, mtRes )
