@@ -255,8 +255,6 @@ static int multi_open(lua_State *L) {
             return 2; // Return nil, [String] error
         }
 
-        sock->clients = 1;
-
         if (sock->ipv6) {
             addr = (struct sockaddr *) &address6;
             addrLen = addrLen6;
@@ -294,8 +292,18 @@ static int multi_open(lua_State *L) {
         }
     }
 
-    if (encrypt) {
+    sock->clients = 1;
 
+    if (encrypt) {
+        lua_pushcfunction(L, multi_tcp_encrypt);
+        lua_pushlightuserdata(L, sock);
+        lua_pushnil(L);
+        lua_call(L, 2, 2);
+        if (lua_isnil(L, 2)) {
+            lua_pushnil(L);
+            lua_pushvalue(L, 1);
+            return 2; // Return nil, [String] error
+        }
     }
 
     lua_pushvalue(L, 4);
