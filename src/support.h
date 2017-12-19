@@ -255,6 +255,8 @@ static int multi_open(lua_State *L) {
             return 2; // Return nil, [String] error
         }
 
+        sock->clients = 1;
+
         if (sock->ipv6) {
             addr = (struct sockaddr *) &address6;
             addrLen = addrLen6;
