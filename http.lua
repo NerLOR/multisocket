@@ -511,7 +511,11 @@ function http.request( method, url, fields, body )
         return nil, err
     end
     sock:setTimeout(10)
-    sock = http.wrap( sock )
+    local sock, err = http.wrap( sock )
+    if not sock then
+        return nil, err
+    end
+
 
     local succ, err = sock:request( method, path, body )
     sock:close()
