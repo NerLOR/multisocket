@@ -204,7 +204,7 @@ static int multi_open(lua_State *L) {
     while (1) {
         int ret = getaddrinfo(address, NULL, &hint, &result);
         if (ret != 0 && ret != -2) {
-            printf("ERROR: %i",ret);
+            printf("ERROR: %i\n",ret);
             lua_pushnil(L);
             lua_pushstring(L, gai_strerror(ret));
             return 3; // Return nil, [String] error
