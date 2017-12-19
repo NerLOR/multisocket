@@ -194,7 +194,7 @@ static int multi_open(lua_State *L) {
     struct addrinfo *result, *next;
     struct addrinfo hint;
     bzero(&hint, sizeof(hint));
-    hint.ai_family = AF_INET6;
+    hint.ai_family = AF_UNSPEC;
 
     struct sockaddr *addr;
     socklen_t addrLen6 = 0;
