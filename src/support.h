@@ -206,8 +206,7 @@ static int multi_open(lua_State *L) {
         if (ret != 0 && ret != -2) {
             lua_pushnil(L);
             lua_pushstring(L, gai_strerror(ret));
-            lua_pushinteger(L, ret);
-            return 3; // Return nil, [String] error
+            return 2; // Return nil, [String] error
         } else if (ret == 0) {
             for (next = result; next != NULL; next = next->ai_next) {
                 if (addrLen6 == 0 && next->ai_family == AF_INET6) {
