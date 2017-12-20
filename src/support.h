@@ -273,7 +273,6 @@ static int multi_open(lua_State *L) {
             lua_pushvalue(L, 2);
             return 2; // Return nil, [String] error
         }
-
         if (connect(sock->socket, addr, addrLen) == -1) {
             if (sock->ipv6 && addrLen4 != 0 && addrLen6 != 0) {
                 addrLen6 = 0;
@@ -294,15 +293,15 @@ static int multi_open(lua_State *L) {
 
     sock->clients = 1;
 
+    // TODO FIX open!
+
     if (encrypt) {
         lua_pushcfunction(L, multi_tcp_encrypt);
-        //lua_pushlightuserdata(L, sock);
-        lua_pushvalue(L, 4); // TODO FIX
-        lua_pushnil(L);
-        lua_call(L, 2, 2);
-        if (lua_isnil(L, 2)) {
+        lua_pushvalue(L, 4);
+        lua_call(L, 1, 2);
+        if (lua_isnil(L, 4)) {
             lua_pushnil(L);
-            lua_pushvalue(L, 1);
+            lua_pushvalue(L, 5);
             return 2; // Return nil, [String] error
         }
     }

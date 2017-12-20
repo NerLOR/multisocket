@@ -27,3 +27,16 @@ print(client:send("GET "..path.." HTTP/1.1\r\nHost: "..host.."\r\n\r\n"))
 print(client:receive("\r\n\r\n"))
 print(client:close())
 
+
+print("\n--------\n")
+
+local c, err = multisocket.open(host, 443, true)
+if not c then
+    print("Error: "..tostring(err))
+end
+print("Opened")
+print(c:isEncrypted())
+print(c:send("GET "..path.." HTTP/1.1\r\nHost: "..host.."\r\n\r\n"))
+print(c:receive("\r\n\r\n"))
+print(c:close())
+
