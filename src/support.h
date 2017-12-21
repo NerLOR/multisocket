@@ -194,34 +194,27 @@ static int multi_open(lua_State *L) {
     struct addrinfo *result, *next;
     struct addrinfo hint;
     bzero(&hint, sizeof(hint));
-    hint.ai_family = AF_INET6;
+    hint.ai_family = AF_UNSPEC;
 
     struct sockaddr *addr;
     socklen_t addrLen6 = 0;
     socklen_t addrLen4 = 0;
     socklen_t addrLen = 0;
 
-    while (1) {
-        int ret = getaddrinfo(address, NULL, &hint, &result);
-        if (ret != 0 && ret != -2) {
-            lua_pushnil(L);
-            lua_pushstring(L, gai_strerror(ret));
-            return 2; // Return nil, [String] error
-        } else if (ret == 0) {
-            for (next = result; next != NULL; next = next->ai_next) {
-                if (addrLen6 == 0 && next->ai_family == AF_INET6) {
-                    memcpy(&address6, next->ai_addr, next->ai_addrlen);
-                    addrLen6 = next->ai_addrlen;
-                } else if (addrLen4 == 0 && next->ai_family == AF_INET) {
-                    memcpy(&address4, next->ai_addr, next->ai_addrlen);
-                    addrLen4 = next->ai_addrlen;
-                }
+    int ret = getaddrinfo(address, NULL, &hint, &result);
+    if (ret != 0) {
+        lua_pushnil(L);
+        lua_pushstring(L, gai_strerror(ret));
+        return 2; // Return nil, [String] error
+    } else {
+        for (next = result; next != NULL; next = next->ai_next) {
+            if (addrLen6 == 0 && next->ai_family == AF_INET6) {
+                memcpy(&address6, next->ai_addr, next->ai_addrlen);
+                addrLen6 = next->ai_addrlen;
+            } else if (addrLen4 == 0 && next->ai_family == AF_INET) {
+                memcpy(&address4, next->ai_addr, next->ai_addrlen);
+                addrLen4 = next->ai_addrlen;
             }
-        }
-        if (hint.ai_family == AF_INET6) {
-            hint.ai_family = AF_INET;
-        } else {
-            break;
         }
     }
 
@@ -292,8 +285,6 @@ static int multi_open(lua_State *L) {
     }
 
     sock->clients = 1;
-
-    // TODO FIX open!
 
     if (encrypt) {
         lua_pushcfunction(L, multi_tcp_encrypt);

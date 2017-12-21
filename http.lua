@@ -191,7 +191,7 @@ function req:request( method, path, body )
     local linenum = 0
     while true do
         linenum = linenum + 1
-        local line, err = self:receive("*l")
+        local line, err = self:receiveLine()
         if not line then
             return nil, err
         elseif line == "" then
@@ -214,9 +214,10 @@ function req:request( method, path, body )
     end
 
     if self.res.fields.transferencoding == "chunked" then
-        self.res.body = io.tmpfile()
+        --self.res.body = io.tmpfile()
+        self.res.body = ""
         while true do
-            local len, err = self:receive("*l")
+            local len, err = self:receiveLine()
             if not len then
                 return nil, err
             end
@@ -228,7 +229,8 @@ function req:request( method, path, body )
             if not buffer then
                 return nil, err
             end
-            self.res.body:write(buffer)
+            --self.res.body:write(buffer)
+            self.res.body = self.res.body..buffer
             local succ, err = self:receive(2)
             if not succ then
                 return nil, err
@@ -237,7 +239,7 @@ function req:request( method, path, body )
             end
         end
     else
-        local body, err = self.res.fields.contentlength ~= 0 and self:receive( self.res.fields.contentlength or "*a" ) or "", nil
+        local body, err = self.res.fields.contentlength ~= 0 and self:receive( self.res.fields.contentlength ) or "", nil
         if not body then
             return nil, err
         end
@@ -510,18 +512,26 @@ function http.request( method, url, fields, body )
     if not sock then
         return nil, err
     end
-    sock:setTimeout(10)
-    local sock, err = http.wrap( sock )
+    sock:setTimeout(4)
+    local sock, err = http.wrap( sock, { fields = fields, host = host } )
     if not sock then
         return nil, err
     end
 
-
     local succ, err = sock:request( method, path, body )
+    local peerport = sock.socket:getPeerPort()
+    local sockport = sock.socket:getSocketPort()
+    local peeraddr = sock.socket:getPeerAddress()
+    local sockaddr = sock.socket:getSocketAddress()
     sock:close()
+    sock.socket = nil
+    sock.peerPort = peerport
+    sock.socketPort = sockport
+    sock.peerAddress = peeraddr
+    sock.socketAddress = sockaddr
 
     if not succ then
-        return nil, err
+        return nil, err, sock
     else
         return sock
     end

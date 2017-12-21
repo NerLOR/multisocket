@@ -71,7 +71,6 @@ static int multi_tcp_encrypt(lua_State *L) {
     // Check if there are two parameters and if they have valid values
     if (lua_gettop(L) != 1 && lua_gettop(L) != 2) {
         lua_pushnil(L);
-        printf("asdfasdfasdfasdf\n");
         lua_pushstring(L, "Wrong number of arguments");
         return 2; // Return nil, [String] error
     } else if (!lua_isuserdata(L, 1) || !luaL_checkudata(L, 1, "multisocket_tcp")) {
@@ -174,8 +173,6 @@ static int multi_tcp_encrypt(lua_State *L) {
         } else if (sock->clients) {
             ret = SSL_connect(sock->ssl);
         }
-
-        printf("RET: %i\n",ret);
 
         if (ret <= 0 && ((sock->servers && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_READ) || (sock->clients && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_WRITE))) {
             lua_pushnil(L);
