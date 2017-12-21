@@ -179,7 +179,7 @@ static int multi_tcp_encrypt(lua_State *L) {
 
         printf("RET: %i\n",ret);
 
-        if (ret <= 0 && ((sock->servers && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_READ) || (sock->clients && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_WRITE))) {
+        if (ret <= 0 ) {//&& ((sock->servers && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_READ) || (sock->clients && SSL_get_error(sock->ssl, ret) != SSL_ERROR_WANT_WRITE))) {
             lua_pushnil(L);
             lua_pushstring(L, multi_ssl_get_error(sock->ssl, ret));
             return 2; // Return nil, [String] error
