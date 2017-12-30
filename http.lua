@@ -473,7 +473,7 @@ function http.wrap(conn, params)
 
     if conn:isServerSide() then
         sock = setmetatable(sock, mtRes)
-        sock:setField("Server","Necronda/2.0.0")
+        sock:setField("Server","Necronda/2.0.1")
         if params.fields then
             for index,data in pairs(params.fields) do
                 sock:setField(index, data)
@@ -482,7 +482,7 @@ function http.wrap(conn, params)
     elseif conn:isClientSide() then
         sock = setmetatable(sock, mtReq)
         sock:setField("Host", params.host or conn:getPeerAddress())
-        sock:setField("User-Agent","Mozilla/5.0 Necronda/2.0.0")
+        sock:setField("User-Agent","Mozilla/5.0 Necronda/2.0.1")
         if params.fields then
             for index,data in pairs(params.fields) do
                 sock:setField(index, data)
