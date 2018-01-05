@@ -527,6 +527,9 @@ function connection:execute(sql)
             local col = columns[i]
             local d
             stream, d = _r_string(stream, "LENENC")
+            if col.type == "decimal" or col.type == "tiny" or col.type == "short" or col.type == "long" or col.type == "float" or col.type == "double" or col.type == "longlong" or col.type == "int24" or col.type == "newdecimal" then
+                d = tonumber(d)
+            end
             row[col.columnAlias] = d
             row[i] = d
         end
