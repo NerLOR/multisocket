@@ -183,6 +183,14 @@ static int multi_tcp_bind(lua_State *L) {
         return 2; // Return nil, [String] error
     }
 
+    // ReusaAddr
+    int enable = 1;
+    if (setsockopt(sock->socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0) {
+        lua_pushnil(L);
+        lua_pushstring(L, strerror(errno));
+        return 2; // Return nil, [String] error
+    }
+
     lua_pushboolean(L, 1);
     return 1; // Return [Boolean] success (true)
 }
