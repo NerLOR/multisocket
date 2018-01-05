@@ -446,7 +446,7 @@ function connection:handshake(capabilities, collation, username, password, dbnam
     return nil, "Unexpected server response"
 end
 
-function connection:query(sql)
+function connection:execute(sql)
     local stream = ""
     stream = _s_int(stream, 0x03, 1)
     stream = _s_string(stream, sql)
