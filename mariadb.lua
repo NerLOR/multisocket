@@ -500,6 +500,7 @@ function connection:execute(sql)
         col.type = fieldTypes[fieldType]
         col.charset = charset
         col.flags = {}
+        col.size = maxColSize
         for name,value in pairs(fieldDetailFlags) do
             col.flags[name] = (detail & value) ~= 0
         end
@@ -515,30 +516,41 @@ function connection:execute(sql)
         return nil, (response.sqlState and "[#"..response.sqlState.."] " or "")..response.body
     end
 
-    data.cols = columns
+    self.columns = columns
+    self.rowNum = 0
 
-    while true do
+    return columns
+end
+
+function connection:fetch()
+    local function fetch()
         local stream, err = self:receivePacket()
         if stream:sub(1,1) == "\xFE" then
-            break
+            self.columns = nil
+            self.rowNum = nil
+            self.seq = 0
+            return
         end
+        self.rowNum = self.rowNum + 1
         local row = {}
-        for i = 1,columnCount do
-            local col = columns[i]
+        for colNum,col in ipairs(self.columns) do
             local d
             stream, d = _r_string(stream, "LENENC")
             if col.type == "decimal" or col.type == "tiny" or col.type == "short" or col.type == "long" or col.type == "float" or col.type == "double" or col.type == "longlong" or col.type == "int24" or col.type == "newdecimal" then
                 d = tonumber(d)
+            elseif col.type == "bit" and #d == 1 then
+                d = (d == "1")
             end
             row[col.columnAlias] = d
-            row[i] = d
+            row[colNum] = d
         end
-        table.insert(data, row)
+        return self.rowNum, row
     end
+    return fetch
+end
 
-    self.seq = 0
+function connection:close()
 
-    return data
 end
 
 
