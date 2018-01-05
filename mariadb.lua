@@ -536,10 +536,10 @@ function connection:fetch()
         for colNum,col in ipairs(self.columns) do
             local d
             stream, d = _r_string(stream, "LENENC")
-            if col.type == "decimal" or col.type == "tiny" or col.type == "short" or col.type == "long" or col.type == "float" or col.type == "double" or col.type == "longlong" or col.type == "int24" or col.type == "newdecimal" then
-                d = tonumber(d)
-            elseif col.type == "bit" and #d == 1 then
+            if col.type == "bit" and col.size == 1 then
                 d = (d == "1")
+            elseif col.type == "decimal" or col.type == "tiny" or col.type == "short" or col.type == "long" or col.type == "float" or col.type == "double" or col.type == "longlong" or col.type == "int24" or col.type == "newdecimal" then
+                d = tonumber(d)
             end
             row[col.columnAlias] = d
             row[colNum] = d
