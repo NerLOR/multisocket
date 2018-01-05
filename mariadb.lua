@@ -553,7 +553,9 @@ function connection:fetch()
 end
 
 function connection:close()
-
+    self:sendPacket("\x01")
+    self.socket:close()
+    return true
 end
 
 
