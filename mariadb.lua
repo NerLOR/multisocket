@@ -528,9 +528,12 @@ function connection:execute(sql)
             local d
             stream, d = _r_string(stream, "LENENC")
             row[col.columnAlias] = d
+            row[i] = d
         end
         table.insert(data, row)
     end
+
+    self.seq = 0
 
     return data
 end
