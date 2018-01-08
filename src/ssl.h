@@ -50,12 +50,13 @@ static const char* multi_ssl_get_error(SSL* ssl, int ret) {
 
 /**
  * Close and shutdown the ssl connection
- * @param ssl the ssl connection to be shutdown
+ * @param Multisocket the ssl connection to be shutdown
  * @return success, 0 = success
  */
-static int multi_ssl_close(SSL* ssl) {
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
+static int multi_ssl_close(Multisocket *sock) {
+    SSL_shutdown(sock->ssl);
+    SSL_free(sock->ssl);
+    SSL_CTX_free(sock->ctx);
     return 0;
 }
 
@@ -162,6 +163,7 @@ static int multi_tcp_encrypt(lua_State *L) {
         }
     }
 
+    sock->ctx = ctx;
     sock->ssl = SSL_new(ctx);
     SSL_set_fd(sock->ssl, sock->socket);
     sock->enc = 1;

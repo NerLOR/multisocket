@@ -27,6 +27,7 @@ static int multi_tcp6(lua_State *L) {
     Multisocket *sock = (Multisocket *) lua_newuserdata(L, sizeof(Multisocket));
     sock->socket = desc; // Set the socket filedescriptor
     sock->ssl = NULL;
+    sock->ctx = NULL;
     sock->startT = getcurrenttime(); // Set connection start time in nanoseconds
     sock->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     sock->recB = 0;  // Init received bytes
@@ -74,6 +75,7 @@ static int multi_tcp4(lua_State *L) {
     Multisocket *sock = (Multisocket *) lua_newuserdata(L, sizeof(Multisocket));
     sock->socket = desc; // Set the socket filedescriptor
     sock->ssl = NULL;
+    sock->ctx = NULL;
     sock->startT = getcurrenttime(); // Set connection start time in nanoseconds
     sock->lastT = getcurrenttime();  // Set last signal time in nanoseconds
     sock->recB = 0;  // Init received bytes
@@ -803,7 +805,7 @@ static int multi_tcp_close(lua_State *L) {
     Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
 
     if (sock->enc) {
-        multi_ssl_close(sock->ssl);
+        multi_ssl_close(sock);
     }
 
     // Close the socket connection

@@ -42,6 +42,8 @@ typedef struct {
      */
     SSL *ssl;
 
+    SSL_CTX *ctx;
+
     /**
      * Creation-time of the socket in nanoseconds
      */
