@@ -50,7 +50,7 @@ http.codes = {
     [405] = {type = "Client Error",  name = "Method Not Allowed",              desc = "The method specified in the Request-Line is not allowed for the resource identified by the Request-URI."},
     [406] = {type = "Client Error",  name = "Not Acceptable",                  desc = "The resource identified by the request is only capable of generating response entities which have content characteristics not acceptable according to the accept headers sent in the request."},
     [407] = {type = "Client Error",  name = "Proxy Authentication Required",   desc = nil},
-    [408] = {type = "Client Error",  name = "Request Time-out",                desc = nil},
+    [408] = {type = "Client Error",  name = "Request Time-out",                desc = "The connection timeout has run out."},
     [409] = {type = "Client Error",  name = "Conflict",                        desc = nil},
     [410] = {type = "Client Error",  name = "Gone",                            desc = nil},
     [411] = {type = "Client Error",  name = "Length Required",                 desc = nil},
