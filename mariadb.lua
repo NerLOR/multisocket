@@ -594,6 +594,18 @@ function mariadb.connect(address, port, schema, username, password)
     return conn
 end
 
+function mariadb.escape(str)
+    str = str:gsub("\x00", "\\0")
+    str = str:gsub("\'", "\\\'")
+    str = str:gsub("\"", "\\\"")
+    str = str:gsub("\b", "\\b")
+    str = str:gsub("\n", "\\n")
+    str = str:gsub("\r", "\\r")
+    str = str:gsub("\t", "\\t")
+    str = str:gsub("\x1A", "\\Z")
+    str = str:gsub("\\", "\\\\")
+    return str
+end
 
 
 return mariadb
