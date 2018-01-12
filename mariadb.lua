@@ -525,6 +525,9 @@ end
 function connection:fetch()
     local function fetch()
         local stream, err = self:receivePacket()
+        if not stream then
+            return nil, err
+        end
         if stream:sub(1,1) == "\xFE" then
             self.columns = nil
             self.rowNum = nil
