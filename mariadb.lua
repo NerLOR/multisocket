@@ -273,6 +273,9 @@ function connection:parsePacket(str)
     else
         stream, err = self:receivePacket()
     end
+    if not stream then
+        return nil, err
+    end
     local len = #stream
     if not stream then
         return nil, err
@@ -447,6 +450,7 @@ function connection:handshake(capabilities, collation, username, password, dbnam
 end
 
 function connection:execute(sql)
+
     local stream = ""
     stream = _s_int(stream, 0x03, 1)
     stream = _s_string(stream, sql)
@@ -461,6 +465,14 @@ function connection:execute(sql)
     elseif stream:sub(1,1) == "\xFF" then
         local packet = self:parsePacket(stream)
         return nil, packet.message
+    elseif stream:sub(1,1) == "\0" then
+        local rows, lastId, status, warnings, info
+        stream, rows = _r_int(stream)
+        stream, lastId = _r_int(stream)
+        stream, status = _r_int(stream, 2)
+        stream, warnings = _r_int(stream, 2)
+        stream, info = _r_string(stream, "EOF")
+        return true, lastId
     end
 
     local data = {}
