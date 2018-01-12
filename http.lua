@@ -425,7 +425,7 @@ end
 
 function res:getCookies()
     local tbl = {}
-    local cookies = self:getField("Cookie")
+    local cookies = self:getField("Cookie") or ""
     for index,data in cookies:gmatch("([^=]+)=([^;]*);") do
         tbl[index] = data
     end
