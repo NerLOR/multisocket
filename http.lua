@@ -257,6 +257,18 @@ function req:getField(index)
     return self.res.fields[index]
 end
 
+function req:setCookie(index, data)
+    self.req.fields["Cookie"] = (self.req.fields["Cookie"] and self.req.fields["Cookie"].."; " or "")..index.."="..data
+end
+
+function req:getCookie(index)
+    error("Not implemented")
+end
+
+function req:getCookies()
+    error("Not implemented")
+end
+
 
 function res:accept()
 
@@ -401,6 +413,23 @@ end
 
 function res:getField(index)
     return self.req.fields[index]
+end
+
+function res:setCookie(index, data)
+    self:setField("Set-Cookie", index.."="..data)
+end
+
+function res:getCookie(index)
+    return self:getCookies()[index]
+end
+
+function res:getCookies()
+    local tbl = {}
+    local cookies = self:getField("Cookie")
+    for index,data in cookies:gmatch("([^=]+)=([^;]*);") do
+        tbl[index] = data
+    end
+    return tbl
 end
 
 
