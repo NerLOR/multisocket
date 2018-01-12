@@ -464,6 +464,7 @@ function connection:execute(sql)
         return nil, err
     elseif stream:sub(1,1) == "\xFF" then
         local packet = self:parsePacket(stream)
+        self.seq = 0
         return nil, packet.message
     elseif stream:sub(1,1) == "\0" then
         local rows, lastId, status, warnings, info
@@ -472,6 +473,7 @@ function connection:execute(sql)
         stream, status = _r_int(stream, 2)
         stream, warnings = _r_int(stream, 2)
         stream, info = _r_string(stream, "EOF")
+        self.seq = 0
         return true, lastId
     end
 
