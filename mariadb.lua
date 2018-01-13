@@ -569,6 +569,19 @@ function connection:fetch()
     return fetch
 end
 
+function connection:get(sql)
+    local cols, err = self:execute(sql)
+    if not cols then
+        return nil, err
+    end
+    local tbl, num
+    for r,row in self:fetch() do
+        tbl = tbl or row
+        num = r
+    end
+    return tbl, num
+end
+
 function connection:close()
     self:sendPacket("\x01")
     self.socket:close()
