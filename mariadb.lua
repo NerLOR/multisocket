@@ -625,11 +625,7 @@ function mariadb.connect(address, port, schema, username, password)
 end
 
 function mariadb.escape(str)
-    if str == nil then
-        str = ""
-    else
-        str = tostring(str)
-    end
+    str = str == nil and "" or tostring(str)
     str = str:gsub("\x00", "\\0")
     str = str:gsub("\'", "\\\'")
     str = str:gsub("\"", "\\\"")
