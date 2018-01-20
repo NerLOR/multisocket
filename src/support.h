@@ -167,7 +167,7 @@ static int multi_open(lua_State *L) {
         lua_pushnil(L);
         lua_pushstring(L, "Argument #2 has to be [Integer] port (0-65535)");
         return 2; // Return nil, [String] error
-    } else if (lua_gettop(L) == 3 && !lua_isboolean(L, 3)) {
+    } else if (!lua_isboolean(L, 3)) {
         lua_pushnil(L);
         lua_pushstring(L, "Argument #3 has to be [Boolean] encrypt");
         return 2; // Return nil, [String] error

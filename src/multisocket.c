@@ -131,6 +131,7 @@ static long getcurrenttime() {
 #include "tcp.h"
 #include "support.h"
 
+#include "base64.h"
 
 
 /**
