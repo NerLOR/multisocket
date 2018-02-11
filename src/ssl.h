@@ -103,15 +103,15 @@ static int multi_tcp_encrypt(lua_State *L) {
     if (sock->servers) {
         method = TLSv1_server_method();
     } else if (sock->clients) {
-        method = TLSv1_2_client_method();
+        method = TLSv1_client_method();
     } else {
-        method = TLSv1_2_method();
+        method = TLSv1_method();
     }
 
     SSL_CTX *ctx = SSL_CTX_new(method);
-    //SSL_CTX_set_options(ctx, SSL_OP_SINGLE_DH_USE | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-    //SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-    //SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
+    SSL_CTX_set_options(ctx, SSL_OP_SINGLE_DH_USE | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     const char* certfile = NULL;
