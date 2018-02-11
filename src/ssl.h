@@ -101,8 +101,7 @@ static int multi_tcp_encrypt(lua_State *L) {
 
     const SSL_METHOD *method;
     if (sock->servers) {
-        method = SSLv3_server_method();
-        //method = TLSv1_2_server_method();
+        method = TLSv1_server_method();
     } else if (sock->clients) {
         method = TLSv1_2_client_method();
     } else {
