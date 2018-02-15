@@ -225,6 +225,7 @@ local fieldDetailFlags = {
 }
 
 local connection = {}
+local statement = {}
 
 
 function connection:receivePacket()
@@ -589,9 +590,41 @@ function connection:close()
 end
 
 
-local mtConn = {
+
+function statement:bind(replace, value)
+    self.sql = self.sql:gsub(replace, mariadb.escape(tostring(value)))
+end
+
+function statement:execute()
+    return self.db:execute(self.sql)
+end
+
+function statement:get()
+    return self.db:get(self.sql)
+end
+
+function statement:fetch()
+    return self.db:fetch()
+end
+
+
+
+local mtConnection = {
     __index = connection
 }
+
+local mtStatement = {
+    __index = statement
+}
+
+
+function connection:prepare(sql)
+    local stmt = setmetatable({
+        sql = sql,
+        db = self,
+    }, mtStatement)
+    return stmt
+end
 
 
 
@@ -606,7 +639,7 @@ function mariadb.connect(address, port, schema, username, password)
         socket = socket,
         flags = {},
         seq = 0,
-    }, mtConn)
+    }, mtConnection)
 
     local params = {
         CLIENT_SECURE_CONNECTION = true,
@@ -626,6 +659,7 @@ end
 
 function mariadb.escape(str)
     str = str == nil and "" or tostring(str)
+    str = str:gsub("\\", "\\\\")
     str = str:gsub("\x00", "\\0")
     str = str:gsub("\'", "\\\'")
     str = str:gsub("\"", "\\\"")
@@ -634,7 +668,6 @@ function mariadb.escape(str)
     str = str:gsub("\r", "\\r")
     str = str:gsub("\t", "\\t")
     str = str:gsub("\x1A", "\\Z")
-    str = str:gsub("\\", "\\\\")
     return str
 end
 
