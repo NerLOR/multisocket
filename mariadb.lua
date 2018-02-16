@@ -593,6 +593,7 @@ end
 
 function statement:bind(replace, value)
     self.sql = self.sql:gsub(replace, mariadb.escape(tostring(value)))
+    return self
 end
 
 function statement:execute()
