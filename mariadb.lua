@@ -555,7 +555,7 @@ function connection:fetch()
             local d
             stream, d = _r_string(stream, "LENENC")
             if col.type == "bit" then
-                d = d:byte()
+                d = d and d:byte()
                 if col.size == 1 then
                     d = (d == 1)
                 end
