@@ -555,7 +555,25 @@ function connection:fetch()
             local d
             stream, d = _r_string(stream, "LENENC")
             if col.type == "bit" then
-                d = d and d:byte()
+                if d then
+                    if #d == 1 then
+                        d = d:byte(1,1)
+                    elseif #d == 2 then
+                        d = d:byte(1,1) << 8 | d:byte(2,2)
+                    elseif #d == 3 then
+                        d = d:byte(1,1) << 16 | d:byte(2,2) << 8 | d:byte(3,3)
+                    elseif #d == 4 then
+                        d = d:byte(1,1) << 24 | d:byte(2,2) << 16 | d:byte(3,3) << 8 | d:byte(4,4)
+                    elseif #d == 5 then
+                        d = d:byte(1,1) << 32 | d:byte(2,2) << 24 | d:byte(3,3) << 16 | d:byte(4,4) << 8 | d:byte(5,5)
+                    elseif #d == 6 then
+                        d = d:byte(1,1) << 40 | d:char(2,2) << 32 | d:byte(3,3) << 24 | d:byte(4,4) << 16 | d:byte(5,5) << 8 | d:byte(6,6)
+                    elseif #d == 7 then
+                        d = d:byte(1,1) << 48 | d:byte(2,2) << 40 | d:byte(3,3) << 32 | d:byte(4,4) << 24 | d:byte(5,5) << 16 | d:byte(6,6) << 8 | d:byte(7,7)
+                    elseif #d == 8 then
+                        d = d:byte(1,1) << 56 | d:byte(2,2) << 48 | d:byte(3,3) << 40 | d:byte(4,4) << 32 | d:byte(5,5) << 24 | d:byte(6,6) << 16 | d:byte(7,7) << 8 | d:byte(8,8)
+                    end
+                end
                 if col.size == 1 then
                     d = (d == 1)
                 end
