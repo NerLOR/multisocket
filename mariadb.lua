@@ -609,8 +609,12 @@ end
 
 
 
-function statement:bind(replace, value)
-    self.sql = self.sql:gsub(replace, mariadb.escape(tostring(value)))
+function statement:bind(replace, value, t)
+    if t == "string" then
+        self.sql = self.sql:gsub(replace, "'"..mariadb.escape(tostring(value)).."'")
+    else
+        self.sql = self.sql:gsub(replace, mariadb.escape(tostring(value)))
+    end
     return self
 end
 
