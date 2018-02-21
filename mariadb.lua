@@ -609,11 +609,15 @@ end
 
 
 
-function statement:bind(replace, value, t)
+function statement:bind(replace, value, t, alt)
     if t == "string" then
-        self.sql = self.sql:gsub(replace, "'"..mariadb.escape(tostring(value)).."'")
+        if not value then
+            self.sql = self.sql:gsub(replace, mariadb.escape(tostring(alt)))
+        else
+            self.sql = self.sql:gsub(replace, "'"..mariadb.escape(tostring(value)).."'")
+        end
     else
-        self.sql = self.sql:gsub(replace, mariadb.escape(tostring(value)))
+        self.sql = self.sql:gsub(replace, mariadb.escape(tostring(value or "NULL")))
     end
     return self
 end
