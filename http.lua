@@ -233,6 +233,9 @@ function req:request(method, path, body)
                 while true do
                     local ind,d,meta = meta:match("^;%s*([^=]*)=([^;*])(.*)")
                     self.res.cookies[ind] = urlDecode(d)
+                    if #meta == 0 then
+                        break
+                    end
                 end
             else
                 self.res.fields[index] = tonumber(data) or data
