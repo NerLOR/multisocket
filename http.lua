@@ -236,7 +236,7 @@ function req:request(method, path, body)
                     if not ind then
                         break
                     end
-                    self.res.cookies[ind] = urlDecode(d)
+                    self.res.cookies[name][ind] = urlDecode(d)
                     if #meta == 0 then
                         break
                     end
