@@ -98,13 +98,13 @@ local function export(fields)
 end
 
 local function urlEncode(str)
-    return str:gmatch("[^%w]", function(chr)
+    return str:gsub("[^%w]", function(chr)
         return string.format("%%%02X", string.byte(chr))
     end)
 end
 
 local function urlDecode(str)
-    return str:gmatch("%%(%x%x)", function(hex)
+    return str:gsub("%%(%x%x)", function(hex)
         return string.char(tonumber(hex, 16))
     end)
 end
