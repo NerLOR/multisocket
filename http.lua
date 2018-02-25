@@ -580,7 +580,7 @@ function http.request(method, url, fields, body)
     sock:setTimeout(4)
     local sock, err = http.wrap(sock, {fields = fields, host = host})
     sock.req.cookies = fields.cookies
-    sock.req.cookies = nil
+    sock.req.fields.cookies  = nil
     if not sock then
         return nil, err
     end
