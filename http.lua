@@ -231,7 +231,7 @@ function req:request(method, path, body)
                 local name, value, meta = data:match("^([^=]+)=([^;]*)(.*)$")
                 self.res.cookies[name] = {value = urlDecode(value)}
                 while true do
-                    local ind,d = meta:match("^;%s*([^=]*)=([^;*])")
+                    local ind,d,meta = meta:match("^;%s*([^=]*)=([^;*])(.*)")
                     self.res.cookies[ind] = urlDecode(d)
                 end
             else
