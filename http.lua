@@ -97,6 +97,18 @@ local function export(fields)
     return str
 end
 
+local function urlEncode(str)
+    return str:gmatch("[^%w]", function(chr)
+        return string.format("%%%02X", string.byte(chr))
+    end)
+end
+
+local function urlDecode(str)
+    return str:gmatch("%%(%x%x)", function(hex)
+        return string.char(tonumber(hex, 16))
+    end)
+end
+
 
 function obj:send(...)
     return self.socket:send(...)
@@ -162,6 +174,12 @@ function req:request(method, path, body)
         len = #body
     end
     self:setField("Content-Length", len)
+    local cookie = ""
+    for ind,d in pairs(self.req.cookies) do
+        cookie = cookie..tostring(ind).."="..tostring(urlEncode(tostring(d))).."; "
+    end
+    cookie = cookie:sub(1,-3)
+    self:setField("Cookie", cookie)
 
     local str = self.req.method.." "..self.req.path.." HTTP/"..self.req.version..CRLF..export(self.req.fields)..CRLF
     local sent, err = self:send(str)
@@ -209,7 +227,16 @@ function req:request(method, path, body)
             if not index or not data then
                 return nil, "invalid response"
             end
-            self.res.fields[index] = tonumber(data) or data
+            if index:lower() == "set-cookie" then
+                local name, value, meta = data:match("^([^=]+)=([^;]*)(.*)$")
+                self.res.cookies[name] = {value = urlDecode(value)}
+                while true do
+                    local ind,d = meta:match("^;%s*([^=]*)=([^;*])")
+                    self.res.cookies[ind] = urlDecode(d)
+                end
+            else
+                self.res.fields[index] = tonumber(data) or data
+            end
         end
     end
 
@@ -488,6 +515,7 @@ function http.wrap(conn, params)
             version = nil,
             fields = setmetatable({}, mtFields),
             body = nil,
+            cookies = {},
         },
         res = {
             statuscode = nil,
@@ -495,6 +523,7 @@ function http.wrap(conn, params)
             version = nil,
             fields = setmetatable({}, mtFields),
             body = nil,
+            cookies = {},
         },
         socket = conn,
     }
