@@ -544,6 +544,7 @@ static int multi_tcp_receive(lua_State *L) {
             printf("PRE\n");
             fflush(stdout);
             long size;
+            printf("%i\n", sock->enc);
             if (sock->enc) {
                 size = SSL_read(sock->ssl, buffer, len);
                 printf("ERROR CODE: %li\n", size);
