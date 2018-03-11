@@ -541,12 +541,16 @@ static int multi_tcp_receive(lua_State *L) {
             if (len > wantedBytes-strLen) {
                 len = wantedBytes-strLen;
             }
+            printf("PRE\n");
+            fflush(stdout);
             long size;
             if (sock->enc) {
                 size = SSL_read(sock->ssl, buffer, len);
             } else {
                 size = recv(sock->socket, buffer, len, 0);
             }
+            printf("POST\n");
+            fflush(stdout);
 
             if (size < 0) {
                 lua_pushnil(L);
