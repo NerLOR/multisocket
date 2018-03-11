@@ -332,11 +332,11 @@ function res:accept()
         end
     end
 
-    local data, err = self.req.fields.contentlength and self.req.fields.contentlength ~= 0 and self:receive(self.req.fields.contentlength) or "", nil
-    if not data then
-        return nil, err
-    end
-    self.req.body = data
+    --local data, err = self.req.fields.contentlength and self.req.fields.contentlength ~= 0 and self:receive(self.req.fields.contentlength) or "", nil
+    --if not data then
+    --    return nil, err
+    --end
+    --self.req.body = data
 
     return self
 end

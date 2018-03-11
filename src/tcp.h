@@ -445,9 +445,6 @@ static int multi_tcp_receive(lua_State *L) {
         return 3; // Return nil, [String] error, [String] partData
     }
 
-    printf("test123?\n");
-    fflush(stdout);
-
     // Cast userdata to Multisocket
     Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
 
@@ -478,9 +475,6 @@ static int multi_tcp_receive(lua_State *L) {
         lua_pushstring(L, "");
         return 3; // Return nil, [String] error, [String] partData
     }
-
-    printf("MODE %i\n", mode);
-    fflush(stdout);
 
     // Init lua string
     luaL_Buffer str;
@@ -541,19 +535,12 @@ static int multi_tcp_receive(lua_State *L) {
             if (len > wantedBytes-strLen) {
                 len = wantedBytes-strLen;
             }
-            printf("PRE\n");
-            fflush(stdout);
             long size;
-            printf("%i\n", sock->enc);
             if (sock->enc) {
                 size = SSL_read(sock->ssl, buffer, len);
-                printf("ERROR CODE: %li\n", size);
-                fflush(stdout);
             } else {
                 size = recv(sock->socket, buffer, len, 0);
             }
-            printf("POST\n");
-            fflush(stdout);
 
             if (size < 0) {
                 lua_pushnil(L);
