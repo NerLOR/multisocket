@@ -476,6 +476,8 @@ static int multi_tcp_receive(lua_State *L) {
         return 3; // Return nil, [String] error, [String] partData
     }
 
+    printf("MODE %i\n", mode);
+
     // Init lua string
     luaL_Buffer str;
     luaL_buffinit(L, &str);
