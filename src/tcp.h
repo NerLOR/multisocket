@@ -445,6 +445,9 @@ static int multi_tcp_receive(lua_State *L) {
         return 3; // Return nil, [String] error, [String] partData
     }
 
+    printf("test123?\n");
+    fflush(stdout);
+
     // Cast userdata to Multisocket
     Multisocket *sock = (Multisocket *) lua_touserdata(L, 1);
 
@@ -477,6 +480,7 @@ static int multi_tcp_receive(lua_State *L) {
     }
 
     printf("MODE %i\n", mode);
+    fflush(stdout);
 
     // Init lua string
     luaL_Buffer str;
