@@ -536,6 +536,14 @@ static int multi_tcp_receive(lua_State *L) {
                 len = wantedBytes-strLen;
             }
             long size;
+
+            if (len == 0) {
+                luaL_pushresult(&str);
+                lua_pushnil(L);
+                lua_pushnil(L);
+                return 3; // Return [String] data, nil, nil
+            }
+
             if (sock->enc) {
                 size = SSL_read(sock->ssl, buffer, len);
             } else {
