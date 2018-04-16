@@ -399,17 +399,14 @@ function res:respond(statuscode, body, statustext, length)
         sent = #body
     else
         --self.socket:setTimeout(0)
-        self.socket:setTimeout(30)
         while true do
             local buffer = body:read(BUFFER_SIZE) -- body:read(sent+BUFFER_SIZE < len and BUFFER_SIZE or len-sent)
-            print(type(buffer) == "string" and #buffer or "BUFFER IS NIL", sent)
             if not buffer or #buffer == 0 then
                 self:send("0\r\n\r\n")
                 break
             end
             sent = sent + #buffer
             local success, err = self:send(string.format("%X\r\n%s\r\n", #buffer, buffer))
-            print(success, err)
             if not success then
                 return nil, err
             end
