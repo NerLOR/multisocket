@@ -3,7 +3,7 @@
 local multisocket = require("multisocket")
 
 local TIMEOUT = 0
-local BUFFER_SIZE = 4096
+local BUFFER_SIZE = 8192
 
 local http = {}
 
