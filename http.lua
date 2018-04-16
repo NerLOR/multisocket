@@ -401,7 +401,7 @@ function res:respond(statuscode, body, statustext, length)
         --self.socket:setTimeout(0)
         while true do
             local buffer = body:read(BUFFER_SIZE) -- body:read(sent+BUFFER_SIZE < len and BUFFER_SIZE or len-sent)
-            print(buffer and #buffer)
+            print(type(buffer) == "string" and #buffer)
             if not buffer or #buffer == 0 then
                 self:send("0\r\n\r\n")
                 break
