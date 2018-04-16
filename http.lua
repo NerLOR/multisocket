@@ -399,6 +399,7 @@ function res:respond(statuscode, body, statustext, length)
         sent = #body
     else
         --self.socket:setTimeout(0)
+        self.socket:setTimeout(30)
         while true do
             local buffer = body:read(BUFFER_SIZE) -- body:read(sent+BUFFER_SIZE < len and BUFFER_SIZE or len-sent)
             print(type(buffer) == "string" and #buffer or "BUFFER IS NIL", sent)
