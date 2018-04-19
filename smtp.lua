@@ -206,7 +206,7 @@ function smtp.send(server, username, password, mail, port)
     --end
     msg = msg.."Subject: "..(mail.subject or "No Subject" ).."\r\n"
     msg = msg.."Content-Transfer-Encoding: base64\r\n"
-    msg = msg.."Content-Type: "..(mail.type or "test/plain").."\r\n"
+    msg = msg.."Content-Type: "..(mail.type or "text/plain").."\r\n"
     msg = msg.."\r\n"..base64.encode(mail.body or "").."\r\n.\r\n"
 
     res, err = conn:command(msg)
