@@ -5,6 +5,20 @@ package.path = package.path..";/home/lorenz/Documents/Projects/lua/?.lua"
 
 local http = require("multisocket.http")
 
+local smtp = require("multisocket.smtp")
+
+
+smtp.send("smtp.gmail.com", "lorenz.stechauner@gmail.com", "melvsyopkfpinmkc", {
+    from = "Necronda Server <lorenz.stechauner@gmail.com>",
+    to = {
+        "hermann".." <".."lorenz.stechauner@htl.rennweg.at"..">",
+    },
+    subject = "Password Reset",
+    type = "text/html",
+    body = [[<a href="https://www.necronda.net/account/reset-password?token=]].."asdf"..[[">Token</a>]]
+})
+
+--[[
 
 
 local req, err = http.request("GET", "https://www.htl.rennweg.at")
@@ -28,6 +42,6 @@ else
     print(req.res.body)
 end
 
-
+]]
 
 
